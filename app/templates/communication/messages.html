@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+
+{% block title %}Messages - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-envelope me-2"></i>Messages</h2>
+        <div>
+            <a href="{{ url_for('communication.new_message') }}" class="btn btn-primary">
+                <i class="fas fa-pen me-2"></i>New Message
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Conversations</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="filterDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-filter"></i>
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="filterDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('communication.messages', filter='all') }}">All</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('communication.messages', filter='unread') }}">Unread</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('communication.messages', filter='police') }}">Police</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('communication.messages', filter='court') }}">Court</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('communication.messages', filter='admin') }}">Admin</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush conversation-list">
+                        {% if conversations %}
+                            {% for conversation in conversations %}
+                                <a href="{{ url_for('communication.view_conversation', conversation_id=conversation.id) }}" class="list-group-item list-group-item-action {% if conversation.id == active_conversation.id %}active{% endif %} {% if conversation.has_unread(current_user.id) %}unread{% endif %}">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-circle me-3 {% if conversation.other_user(current_user.id).is_online() %}online{% endif %}">
+                                            <span class="initials">{{ conversation.other_user(current_user.id).first_name[0] }}{{ conversation.other_user(current_user.id).last_name[0] }}</span>
+                                        </div>
+                                        <div class="flex-grow-1 min-width-0">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h6 class="mb-0 text-truncate">{{ conversation.other_user(current_user.id).first_name }} {{ conversation.other_user(current_user.id).last_name }}</h6>
+                                                <small class="text-muted">{{ conversation.last_message.created_at|timeago }}</small>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <p class="text-truncate mb-0 small">
+                                                    {% if conversation.last_message.sender_id == current_user.id %}
+                                                        <span class="text-muted">You: </span>
+                                                    {% endif %}
+                                                    {{ conversation.last_message.content }}
+                                                </p>
+                                                {% if conversation.has_unread(current_user.id) %}
+                                                    <span class="badge bg-primary rounded-pill">{{ conversation.unread_count(current_user.id) }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <small class="text-muted">
+                                                <span class="badge bg-secondary">{{ conversation.other_user(current_user.id).role|title }}</span>
+                                            </small>
+                                        </div>
+                                    </div>
+                                </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="fas fa-comments fa-4x text-muted mb-3"></i>
+                                <h5>No conversations yet</h5>
+                                <p class="text-muted">Start a new conversation by clicking the "New Message" button.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            {% if active_conversation %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-circle me-3 {% if active_conversation.other_user(current_user.id).is_online() %}online{% endif %}">
+                                    <span class="initials">{{ active_conversation.other_user(current_user.id).first_name[0] }}{{ active_conversation.other_user(current_user.id).last_name[0] }}</span>
+                                </div>
+                                <div>
+                                    <h5 class="mb-0">{{ active_conversation.other_user(current_user.id).first_name }} {{ active_conversation.other_user(current_user.id).last_name }}</h5>
+                                    <p class="text-muted mb-0 small">
+                                        <span class="badge bg-secondary">{{ active_conversation.other_user(current_user.id).role|title }}</span>
+                                        {% if active_conversation.other_user(current_user.id).is_online() %}
+                                            <span class="text-success">● Online</span>
+                                        {% else %}
+                                            <span class="text-muted">● Last seen {{ active_conversation.other_user(current_user.id).last_seen|timeago }}</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="conversationMenu" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="conversationMenu">
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-search me-2"></i>Search Messages</a></li>
+                                    <li><a class="dropdown-item" href="#"><i class="fas fa-bell-slash me-2"></i>Mute Notifications</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item text-danger" href="#"><i class="fas fa-trash me-2"></i>Delete Conversation</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="chat-messages p-4" id="chatMessages">
+                            {% if messages %}
+                                <div class="text-center mb-3">
+                                    <span class="badge bg-light text-dark">{{ active_conversation.created_at.strftime('%B %d, %Y') }}</span>
+                                </div>
+                                
+                                {% for message in messages %}
+                                    {% if loop.first or (messages[loop.index0-1].created_at.date() != message.created_at.date()) %}
+                                        <div class="text-center mb-3">
+                                            <span class="badge bg-light text-dark">{{ message.created_at.strftime('%B %d, %Y') }}</span>
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="message {% if message.sender_id == current_user.id %}message-out{% else %}message-in{% endif %}">
+                                        <div class="message-content">
+                                            {{ message.content }}
+                                            {% if message.attachment_path %}
+                                                <div class="message-attachment mt-2">
+                                                    {% if message.attachment_path.endswith(('.jpg', '.jpeg', '.png', '.gif')) %}
+                                                        <a href="{{ url_for('static', filename=message.attachment_path) }}" target="_blank">
+                                                            <img src="{{ url_for('static', filename=message.attachment_path) }}" alt="Attachment" class="img-fluid rounded">
+                                                        </a>
+                                                    {% elif message.attachment_path.endswith(('.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt')) %}
+                                                        <a href="{{ url_for('static', filename=message.attachment_path) }}" target="_blank" class="attachment-file">
+                                                            <i class="fas fa-file-alt me-2"></i>{{ message.attachment_name }}
+                                                        </a>
+                                                    {% else %}
+                                                        <a href="{{ url_for('static', filename=message.attachment_path) }}" target="_blank" class="attachment-file">
+                                                            <i class="fas fa-paperclip me-2"></i>{{ message.attachment_name }}
+                                                        </a>
+                                                    {% endif %}
+                                                </div>
+                                            {% endif %}
+                                            <div class="message-info">
+                                                <span class="message-time">{{ message.created_at.strftime('%H:%M') }}</span>
+                                                {% if message.sender_id == current_user.id %}
+                                                    {% if message.is_read %}
+                                                        <span class="message-status"><i class="fas fa-check-double text-primary"></i></span>
+                                                    {% else %}
+                                                        <span class="message-status"><i class="fas fa-check"></i></span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="fas fa-comment-dots fa-4x text-muted mb-3"></i>
+                                    <h5>No messages yet</h5>
+                                    <p class="text-muted">Start the conversation by sending a message below.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <form method="POST" action="{{ url_for('communication.send_message', conversation_id=active_conversation.id) }}" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="input-group">
+                                <button type="button" class="btn btn-outline-secondary" id="attachmentBtn">
+                                    <i class="fas fa-paperclip"></i>
+                                </button>
+                                <input type="file" id="attachment" name="attachment" class="d-none">
+                                <input type="text" class="form-control" name="message" placeholder="Type a message..." required>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <div id="attachmentPreview" class="mt-2 d-none">
+                                <div class="d-flex align-items-center p-2 bg-light rounded">
+                                    <i class="fas fa-file me-2"></i>
+                                    <span id="attachmentName" class="flex-grow-1"></span>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" id="removeAttachment">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body text-center py-5">
+                        <i class="fas fa-comments fa-5x text-muted mb-4"></i>
+                        <h4>Select a conversation</h4>
+                        <p class="text-muted">Choose an existing conversation from the list or start a new one.</p>
+                        <a href="{{ url_for('communication.new_message') }}" class="btn btn-primary mt-3">
+                            <i class="fas fa-pen me-2"></i>New Message
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .conversation-list {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .chat-messages {
+        height: 500px;
+        overflow-y: auto;
+    }
+    
+    .message {
+        margin-bottom: 15px;
+        display: flex;
+    }
+    
+    .message-in {
+        justify-content: flex-start;
+    }
+    
+    .message-out {
+        justify-content: flex-end;
+    }
+    
+    .message-content {
+        max-width: 70%;
+        padding: 10px 15px;
+        border-radius: 10px;
+        position: relative;
+    }
+    
+    .message-in .message-content {
+        background-color: #f0f2f5;
+    }
+    
+    .message-out .message-content {
+        background-color: #dcf8c6;
+    }
+    
+    .message-info {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        margin-top: 5px;
+        font-size: 0.75rem;
+        color: #8696a0;
+    }
+    
+    .message-time {
+        margin-right: 5px;
+    }
+    
+    .attachment-file {
+        display: inline-block;
+        padding: 5px 10px;
+        background-color: rgba(0,0,0,0.05);
+        border-radius: 5px;
+        text-decoration: none;
+        color: #333;
+    }
+    
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        background-color: #6c757d;
+        text-align: center;
+        border-radius: 50%;
+        position: relative;
+    }
+    
+    .avatar-circle.online:after {
+        content: '';
+        width: 10px;
+        height: 10px;
+        background-color: #28a745;
+        border-radius: 50%;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        border: 2px solid white;
+    }
+    
+    .initials {
+        position: relative;
+        top: 10px;
+        font-size: 16px;
+        line-height: 20px;
+        color: #fff;
+        font-weight: bold;
+    }
+    
+    .unread {
+        background-color: rgba(13, 110, 253, 0.05);
+        font-weight: bold;
+    }
+</style>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        const attachmentBtn = document.getElementById('attachmentBtn');
+        const attachment = document.getElementById('attachment');
+        const attachmentPreview = document.getElementById('attachmentPreview');
+        const attachmentName = document.getElementById('attachmentName');
+        const removeAttachment = document.getElementById('removeAttachment');
+        
+        if (attachmentBtn) {
+            attachmentBtn.addEventListener('click', function() {
+                attachment.click();
+            });
+        }
+        
+        if (attachment) {
+            attachment.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    attachmentName.textContent = this.files[0].name;
+                    attachmentPreview.classList.remove('d-none');
+                } else {
+                    attachmentPreview.classList.add('d-none');
+                }
+            });
+        }
+        
+        if (removeAttachment) {
+            removeAttachment.addEventListener('click', function() {
+                attachment.value = '';
+                attachmentPreview.classList.add('d-none');
+            });
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block title %}View Document - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('document.index') }}">Documents</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ document.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="fas fa-file-alt me-2"></i>{{ document.title }}</h4>
+                    <div>
+                        {% if document.is_verified %}
+                            <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Verified</span>
+                        {% else %}
+                            <span class="badge bg-warning"><i class="fas fa-clock me-1"></i>Pending Verification</span>
+                        {% endif %}
+                        
+                        {% if document.is_expired() %}
+                            <span class="badge bg-danger"><i class="fas fa-exclamation-circle me-1"></i>Expired</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Document Details</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Document Type:</th>
+                                    <td>{{ document.document_type }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Uploaded On:</th>
+                                    <td>{{ document.created_at.strftime('%d %B %Y, %H:%M') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Expiry Date:</th>
+                                    <td>
+                                        {% if document.expiry_date %}
+                                            {{ document.expiry_date.strftime('%d %B %Y') }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Verification Status:</th>
+                                    <td>
+                                        {% if document.is_verified %}
+                                            <span class="text-success">Verified on {{ document.verified_at.strftime('%d %B %Y') }}</span>
+                                        {% else %}
+                                            <span class="text-warning">Pending Verification</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if document.is_verified and document.verified_by %}
+                                <tr>
+                                    <th>Verified By:</th>
+                                    <td>{{ document.verified_by }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="qr-code-container">
+                                <h5 class="text-center mb-3">Verification QR Code</h5>
+                                <img src="{{ url_for('static', filename='uploads/qrcodes/doc_' + document.id|string + '.png') }}" alt="QR Code" class="img-fluid">
+                                <p class="text-center mt-2">Scan to verify document authenticity</p>
+                                <p class="text-center">
+                                    <small class="text-muted">Verification Code: {{ document.verification_code }}</small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Description</h5>
+                        <p>{{ document.description or 'No description provided.' }}</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Document Preview</h5>
+                        <div class="document-preview text-center p-3 border rounded">
+                            {% if document.file_path.endswith(('.jpg', '.jpeg', '.png', '.gif')) %}
+                                <img src="{{ url_for('static', filename=document.file_path) }}" alt="{{ document.title }}" class="img-fluid" style="max-height: 400px;">
+                            {% elif document.file_path.endswith('.pdf') %}
+                                <div class="p-5 bg-light">
+                                    <i class="fas fa-file-pdf fa-5x text-danger mb-3"></i>
+                                    <p>PDF Document</p>
+                                </div>
+                            {% else %}
+                                <div class="p-5 bg-light">
+                                    <i class="fas fa-file-alt fa-5x text-primary mb-3"></i>
+                                    <p>Document File</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="{{ url_for('document.download', document_id=document.id) }}" class="btn btn-success">
+                                <i class="fas fa-download me-2"></i>Download
+                            </a>
+                            {% if current_user.is_police() or current_user.is_admin() or current_user.is_court() %}
+                                {% if not document.is_verified %}
+                                    <a href="{{ url_for('document.verify', document_id=document.id) }}" class="btn btn-warning">
+                                        <i class="fas fa-check-circle me-2"></i>Verify Document
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('document.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Documents
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Access History</h5>
+                </div>
+                <div class="card-body">
+                    {% if document.access_logs.all() %}
+                        <div class="list-group">
+                            {% for log in document.access_logs.order_by(DocumentAccessLog.accessed_at.desc()).limit(10).all() %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ log.action|capitalize }}</h6>
+                                        <small>{{ log.accessed_at.strftime('%d %b %Y, %H:%M') }}</small>
+                                    </div>
+                                    <p class="mb-1">By: {{ log.user.username }}</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No access history available.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Document Security</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-shield-alt me-2"></i>Secure Storage</h6>
+                        <p class="mb-0">Your document is stored in a secure digital vault with encryption.</p>
+                    </div>
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-user-lock me-2"></i>Access Control</h6>
+                        <p class="mb-0">Only authorized officials can access your document, and all access is logged.</p>
+                    </div>
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-qrcode me-2"></i>Verification</h6>
+                        <p class="mb-0">The QR code ensures your document can be verified for authenticity.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

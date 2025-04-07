@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block title %}New Message - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('communication.messages') }}">Messages</a></li>
+            <li class="breadcrumb-item active" aria-current="page">New Message</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-lg mb-4">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0"><i class="fas fa-pen me-2"></i>New Message</h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('communication.new_message') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            <label for="recipient" class="form-label">Recipient</label>
+                            {% if recipient %}
+                                <input type="hidden" name="recipient_id" value="{{ recipient.id }}">
+                                <div class="form-control disabled">{{ recipient.first_name }} {{ recipient.last_name }} ({{ recipient.role|title }})</div>
+                            {% else %}
+                                <select class="form-select" id="recipient" name="recipient_id" required>
+                                    <option value="" selected disabled>Select recipient</option>
+                                    {% if officials %}
+                                        <optgroup label="Officials">
+                                            {% for official in officials %}
+                                                <option value="{{ official.id }}">{{ official.first_name }} {{ official.last_name }} ({{ official.role|title }})</option>
+                                            {% endfor %}
+                                        </optgroup>
+                                    {% endif %}
+                                    {% if citizens %}
+                                        <optgroup label="Citizens">
+                                            {% for citizen in citizens %}
+                                                <option value="{{ citizen.id }}">{{ citizen.first_name }} {{ citizen.last_name }}</option>
+                                            {% endfor %}
+                                        </optgroup>
+                                    {% endif %}
+                                </select>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="subject" name="subject" placeholder="Enter message subject" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Message</label>
+                            <textarea class="form-control" id="message" name="message" rows="5" placeholder="Type your message here..." required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="attachment" class="form-label">Attachment (Optional)</label>
+                            <input type="file" class="form-control" id="attachment" name="attachment">
+                            <div class="form-text">You can attach documents, images, or other files (max 10MB).</div>
+                        </div>
+                        
+                        <div id="attachmentPreview" class="mb-3 d-none">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-file fa-2x text-primary me-3"></i>
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-0" id="attachmentName"></h6>
+                                            <p class="text-muted mb-0 small" id="attachmentSize"></p>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" id="removeAttachment">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {% if related_cases %}
+                        <div class="mb-3">
+                            <label for="related_case" class="form-label">Related Case (Optional)</label>
+                            <select class="form-select" id="related_case" name="related_case_id">
+                                <option value="" selected>None</option>
+                                {% for case in related_cases %}
+                                    <option value="{{ case.id }}">{{ case.case_number }} - {{ case.case_type }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Link this message to a related case for better organization.</div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="priority" name="priority">
+                                <label class="form-check-label" for="priority">
+                                    Mark as Priority
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mb-4">
+                            <h6><i class="fas fa-info-circle me-2"></i>Communication Guidelines</h6>
+                            <ul class="mb-0">
+                                <li>Be clear and concise in your communication.</li>
+                                <li>Include all relevant details and reference numbers.</li>
+                                <li>Response time may vary depending on the recipient's availability.</li>
+                                <li>For urgent matters, please mark the message as priority.</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
+                            <a href="{{ url_for('communication.messages') }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const attachment = document.getElementById('attachment');
+        const attachmentPreview = document.getElementById('attachmentPreview');
+        const attachmentName = document.getElementById('attachmentName');
+        const attachmentSize = document.getElementById('attachmentSize');
+        const removeAttachment = document.getElementById('removeAttachment');
+        
+        attachment.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                const file = this.files[0];
+                attachmentName.textContent = file.name;
+                
+                // Format file size
+                let size = file.size;
+                let sizeStr = '';
+                if (size < 1024) {
+                    sizeStr = size + ' bytes';
+                } else if (size < 1024 * 1024) {
+                    sizeStr = (size / 1024).toFixed(2) + ' KB';
+                } else {
+                    sizeStr = (size / (1024 * 1024)).toFixed(2) + ' MB';
+                }
+                
+                attachmentSize.textContent = sizeStr;
+                attachmentPreview.classList.remove('d-none');
+            } else {
+                attachmentPreview.classList.add('d-none');
+            }
+        });
+        
+        removeAttachment.addEventListener('click', function() {
+            attachment.value = '';
+            attachmentPreview.classList.add('d-none');
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-bell me-2"></i>Notifications</h2>
+        <div>
+            <button class="btn btn-outline-primary" id="markAllRead">
+                <i class="fas fa-check-double me-2"></i>Mark All as Read
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Filter</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <a href="{{ url_for('communication.notifications', filter='all') }}" class="list-group-item list-group-item-action {% if filter == 'all' %}active{% endif %}">
+                            All
+                            {% if unread_counts.all > 0 %}
+                                <span class="badge bg-primary rounded-pill float-end">{{ unread_counts.all }}</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('communication.notifications', filter='unread') }}" class="list-group-item list-group-item-action {% if filter == 'unread' %}active{% endif %}">
+                            Unread
+                            {% if unread_counts.all > 0 %}
+                                <span class="badge bg-primary rounded-pill float-end">{{ unread_counts.all }}</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('communication.notifications', filter='read') }}" class="list-group-item list-group-item-action {% if filter == 'read' %}active{% endif %}">
+                            Read
+                        </a>
+                        <a href="{{ url_for('communication.notifications', filter='fine') }}" class="list-group-item list-group-item-action {% if filter == 'fine' %}active{% endif %}">
+                            Fines
+                            {% if unread_counts.fine > 0 %}
+                                <span class="badge bg-primary rounded-pill float-end">{{ unread_counts.fine }}</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('communication.notifications', filter='sos') }}" class="list-group-item list-group-item-action {% if filter == 'sos' %}active{% endif %}">
+                            SOS
+                            {% if unread_counts.sos > 0 %}
+                                <span class="badge bg-primary rounded-pill float-end">{{ unread_counts.sos }}</span>
+                            {% endif %}
+                        </a>
+                        <a href="{{ url_for('communication.notifications', filter='message') }}" class="list-group-item list-group-item-action {% if filter == 'message' %}active{% endif %}">
+                            Messages
+                            {% if unread_counts.message > 0 %}
+                                <span class="badge bg-primary rounded-pill float-end">{{ unread_counts.message }}</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Settings</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('communication.update_notification_settings') }}" method="POST">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label class="form-label">Email Notifications</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="emailFines" name="email_fines" {% if notification_settings.email_fines %}checked{% endif %}>
+                                <label class="form-check-label" for="emailFines">Fines</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="emailSos" name="email_sos" {% if notification_settings.email_sos %}checked{% endif %}>
+                                <label class="form-check-label" for="emailSos">SOS</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="emailMessages" name="email_messages" {% if notification_settings.email_messages %}checked{% endif %}>
+                                <label class="form-check-label" for="emailMessages">Messages</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">SMS Notifications</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="smsFines" name="sms_fines" {% if notification_settings.sms_fines %}checked{% endif %}>
+                                <label class="form-check-label" for="smsFines">Fines</label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="smsSos" name="sms_sos" {% if notification_settings.sms_sos %}checked{% endif %}>
+                                <label class="form-check-label" for="smsSos">SOS</label>
+                            </div>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">Save Settings</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            {% if filter == 'all' %}
+                                All Notifications
+                            {% elif filter == 'unread' %}
+                                Unread Notifications
+                            {% elif filter == 'read' %}
+                                Read Notifications
+                            {% else %}
+                                {{ filter|title }} Notifications
+                            {% endif %}
+                        </h5>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-sort me-1"></i>Sort
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="sortDropdown">
+                                <li><a class="dropdown-item" href="{{ url_for('communication.notifications', filter=filter, sort='newest') }}">Newest First</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('communication.notifications', filter=filter, sort='oldest') }}">Oldest First</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('communication.notifications', filter=filter, sort='priority') }}">Priority</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    {% if notifications %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Type</th>
+                                        <th>Time</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for notification in notifications %}
+                                    <tr class="{% if not notification.is_read %}table-warning{% endif %}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-shrink-0 me-3">
+                                                    {% if notification.notification_type == 'fine' %}
+                                                        <i class="fas fa-file-invoice text-danger"></i>
+                                                    {% elif notification.notification_type == 'sos' %}
+                                                        <i class="fas fa-exclamation-triangle text-warning"></i>
+                                                    {% elif notification.notification_type == 'message' %}
+                                                        <i class="fas fa-envelope text-primary"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-bell"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <h6 class="mb-1">{{ notification.title }}</h6>
+                                                    <small class="text-muted">{{ notification.message }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {% if notification.notification_type == 'fine' %}
+                                                    Fine
+                                                {% elif notification.notification_type == 'sos' %}
+                                                    SOS
+                                                {% elif notification.notification_type == 'message' %}
+                                                    Message
+                                                {% else %}
+                                                    System
+                                                {% endif %}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ notification.created_at.strftime('%d %b %Y, %H:%M') }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                    Actions
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    {% if not notification.is_read %}
+                                                        <li>
+                                                            <a class="dropdown-item" href="{{ url_for('communication.mark_read', notification_id=notification.id) }}">
+                                                                <i class="fas fa-check me-2"></i>Mark as Read
+                                                            </a>
+                                                        </li>
+                                                    {% else %}
+                                                        <li>
+                                                            <a class="dropdown-item" href="{{ url_for('communication.mark_unread', notification_id=notification.id) }}">
+                                                                <i class="fas fa-times me-2"></i>Mark as Unread
+                                                            </a>
+                                                        </li>
+                                                    {% endif %}
+                                                    <li>
+                                                        <form action="{{ url_for('communication.delete_notification', notification_id=notification.id) }}" method="POST" style="display: inline;">
+                                                            <button type="submit" class="dropdown-item" onclick="return confirm('Are you sure you want to delete this notification?')">
+                                                                <i class="fas fa-trash me-2"></i>Delete
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        {% if notifications.pages > 1 %}
+                            <nav aria-label="Page navigation" class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    {% if notifications.has_prev %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('communication.notifications', page=notifications.prev_num, filter=filter) }}" aria-label="Previous">
+                                            <span aria-hidden="true">&laquo;</span>
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">&laquo;</span>
+                                    </li>
+                                    {% endif %}
+
+                                    {% for page_num in notifications.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                                    {% if page_num %}
+                                        {% if notifications.page == page_num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ page_num }}</span>
+                                        </li>
+                                        {% else %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="{{ url_for('communication.notifications', page=page_num, filter=filter) }}">{{ page_num }}</a>
+                                        </li>
+                                        {% endif %}
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link">...</span>
+                                        </li>
+                                    {% endif %}
+                                    {% endfor %}
+
+                                    {% if notifications.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('communication.notifications', page=notifications.next_num, filter=filter) }}" aria-label="Next">
+                                            <span aria-hidden="true">&raquo;</span>
+                                        </a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item disabled">
+                                        <span class="page-link">&raquo;</span>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">No notifications found</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .notification-list {
+        max-height: 600px;
+        overflow-y: auto;
+    }
+    
+    .unread {
+        background-color: rgba(13, 110, 253, 0.05);
+    }
+    
+    .icon-circle {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const markAllReadBtn = document.getElementById('markAllRead');
+        
+        if (markAllReadBtn) {
+            markAllReadBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to mark all notifications as read?')) {
+                    window.location.href = "{{ url_for('communication.mark_all_read') }}";
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}
+{% endblock %}

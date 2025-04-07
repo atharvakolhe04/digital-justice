@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}New SOS Alert - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Create SOS Alert</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-4">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Important:</strong> SOS alerts are for emergency situations only. Police will be immediately notified.
+                    </div>
+
+                    <form method="POST" action="{{ url_for('communication.new_sos') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            <label for="location" class="form-label">Your Current Location</label>
+                            <input type="text" class="form-control" id="location" name="location" required 
+                                placeholder="Enter your current location (e.g., address, landmark)">
+                            <div class="form-text">Please provide as much detail as possible about your location.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Emergency Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="5" required
+                                placeholder="Describe the emergency situation in detail"></textarea>
+                            <div class="form-text">Include any relevant details that would help police respond effectively.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Send SOS Alert
+                            </button>
+                            <a href="{{ url_for('communication.sos_alerts') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Document - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-lg mt-4">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0"><i class="fas fa-upload me-2"></i>Upload Document</h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('document.upload') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="title" class="form-label">Document Title</label>
+                                <input type="text" class="form-control" id="title" name="title" placeholder="Enter document title" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="document_type" class="form-label">Document Type</label>
+                                <select class="form-select" id="document_type" name="document_type" required>
+                                    <option value="" selected disabled>Select document type</option>
+                                    <option value="ID Card">ID Card</option>
+                                    <option value="Driving License">Driving License</option>
+                                    <option value="Certificate">Certificate</option>
+                                    <option value="Legal Document">Legal Document</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" placeholder="Enter document description"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="expiry_date" class="form-label">Expiry Date (if applicable)</label>
+                            <input type="date" class="form-control" id="expiry_date" name="expiry_date">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="document_file" class="form-label">Document File</label>
+                            <input type="file" class="form-control" id="document_file" name="document_file" required>
+                            <div class="form-text">Allowed file types: PDF, PNG, JPG, JPEG, DOC, DOCX</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div id="file-preview" class="mt-3"></div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>Document Verification</h6>
+                            <p class="mb-0">Your document will need to be verified by an authorized official before it can be used officially. You will be notified once the verification is complete.</p>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Upload Document</button>
+                            <a href="{{ url_for('document.index') }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('document_file');
+        const filePreview = document.getElementById('file-preview');
+        
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (file.type.includes('image')) {
+                        filePreview.innerHTML = `
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">File Preview</h6>
+                                    <img src="${e.target.result}" class="img-fluid" style="max-height: 300px;" alt="Preview">
+                                </div>
+                            </div>
+                        `;
+                    } else if (file.type.includes('pdf')) {
+                        filePreview.innerHTML = `
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">File Selected</h6>
+                                    <i class="fas fa-file-pdf fa-5x text-danger mb-3"></i>
+                                    <p>${file.name}</p>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        filePreview.innerHTML = `
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">File Selected</h6>
+                                    <i class="fas fa-file-alt fa-5x text-primary mb-3"></i>
+                                    <p>${file.name}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+</script>
+{% endblock %}

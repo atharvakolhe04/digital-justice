@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}Digital Justice System - Transforming Law Enforcement{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <h1 class="mb-4">Digital Justice System</h1>
+        <p class="lead mb-4">Transforming law enforcement through digital innovation, transparency, and efficiency.</p>
+        <div class="d-flex justify-content-center gap-3">
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+            {% else %}
+                <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">Login</a>
+                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-light btn-lg">Register</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">Key Features</h2>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card feature-card h-100">
+                    <i class="fas fa-file-alt"></i>
+                    <h3>Document Digitalization</h3>
+                    <p>Secure digital storage for all your important documents with QR code verification and role-based access control.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card feature-card h-100">
+                    <i class="fas fa-receipt"></i>
+                    <h3>Fine Management</h3>
+                    <p>Efficient e-Challan generation, tracking, and payment system with immutable transaction logging.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card feature-card h-100">
+                    <i class="fas fa-gavel"></i>
+                    <h3>Dispute Resolution</h3>
+                    <p>Fair and transparent challan dispute filing, case tracking, and evidence management system.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card feature-card h-100">
+                    <i class="fas fa-comments"></i>
+                    <h3>Communication Portal</h3>
+                    <p>Direct messaging between citizens and government officials with notifications and emergency SOS features.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Benefits Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-5">Benefits</h2>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="card-title"><i class="fas fa-users text-primary me-2"></i>For Citizens</h3>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">Easy access to all personal documents</li>
+                            <li class="list-group-item">Convenient online fine payment</li>
+                            <li class="list-group-item">Transparent dispute resolution process</li>
+                            <li class="list-group-item">Direct communication with officials</li>
+                            <li class="list-group-item">Real-time notifications for important updates</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h3 class="card-title"><i class="fas fa-building text-primary me-2"></i>For Government</h3>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">Reduced paperwork and administrative costs</li>
+                            <li class="list-group-item">Improved data consistency and accuracy</li>
+                            <li class="list-group-item">Enhanced transparency and accountability</li>
+                            <li class="list-group-item">Streamlined fine collection process</li>
+                            <li class="list-group-item">Better citizen engagement and satisfaction</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 text-center">
+    <div class="container">
+        <h2 class="mb-4">Ready to Experience Digital Justice?</h2>
+        <p class="lead mb-4">Join thousands of citizens who are already benefiting from our digital justice system.</p>
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg">Go to Dashboard</a>
+        {% else %}
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-lg">Register Now</a>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

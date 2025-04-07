@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+
+{% block title %}View Fine - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('fine.index') }}">Fines</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ fine.challan_number }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="fas fa-receipt me-2"></i>E-Challan: {{ fine.challan_number }}</h4>
+                    <div>
+                        {% if fine.status == 'pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% elif fine.status == 'paid' %}
+                            <span class="badge bg-success">Paid</span>
+                        {% elif fine.status == 'disputed' %}
+                            <span class="badge bg-info">Disputed</span>
+                        {% elif fine.status == 'waived' %}
+                            <span class="badge bg-secondary">Waived</span>
+                        {% endif %}
+                        
+                        {% if fine.is_overdue() %}
+                            <span class="badge bg-danger">Overdue</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Violation Details</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Violation Type:</th>
+                                    <td>{{ fine.violation_type }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Date & Time:</th>
+                                    <td>{{ fine.violation_date.strftime('%d %B %Y') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Location:</th>
+                                    <td>{{ fine.violation_location }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Vehicle Number:</th>
+                                    <td>{{ fine.vehicle_number or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>License Number:</th>
+                                    <td>{{ fine.license_number or 'N/A' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Fine Details</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Fine Amount:</th>
+                                    <td>₹{{ fine.amount }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Due Date:</th>
+                                    <td>{{ fine.due_date.strftime('%d %B %Y') }}</td>
+                                </tr>
+                                {% if fine.is_overdue() and fine.status == 'pending' %}
+                                <tr>
+                                    <th>Late Penalty:</th>
+                                    <td class="text-danger">₹{{ fine.calculate_penalty() }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Total Due:</th>
+                                    <td class="fw-bold">₹{{ fine.total_amount_due() }}</td>
+                                </tr>
+                                {% endif %}
+                                <tr>
+                                    <th>Issued By:</th>
+                                    <td>Officer ID: {{ fine.issued_by }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Issued On:</th>
+                                    <td>{{ fine.created_at.strftime('%d %B %Y, %H:%M') }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Violation Description</h5>
+                        <p>{{ fine.violation_description }}</p>
+                    </div>
+
+                    {% if fine.evidence_file_path %}
+                    <div class="mb-4">
+                        <h5>Evidence</h5>
+                        <div class="evidence-preview text-center p-3 border rounded">
+                            {% if fine.evidence_file_path.endswith(('.jpg', '.jpeg', '.png', '.gif')) %}
+                                <img src="{{ url_for('static', filename=fine.evidence_file_path) }}" alt="Evidence" class="img-fluid" style="max-height: 300px;">
+                            {% elif fine.evidence_file_path.endswith(('.mp4', '.avi', '.mov')) %}
+                                <div class="p-5 bg-light">
+                                    <i class="fas fa-video fa-5x text-primary mb-3"></i>
+                                    <p>Video Evidence</p>
+                                </div>
+                            {% else %}
+                                <div class="p-5 bg-light">
+                                    <i class="fas fa-file-alt fa-5x text-primary mb-3"></i>
+                                    <p>Evidence File</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="qr-code-container">
+                        <h5 class="text-center mb-3">Payment QR Code</h5>
+                        <img src="{{ url_for('static', filename='uploads/qrcodes/fine_' + fine.id|string + '.png') }}" alt="QR Code" class="img-fluid">
+                        <p class="text-center mt-2">Scan to pay fine</p>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            {% if fine.status == 'pending' and (current_user.id == fine.user_id or current_user.is_admin()) %}
+                                <a href="{{ url_for('fine.pay', fine_id=fine.id) }}" class="btn btn-success">
+                                    <i class="fas fa-money-bill-wave me-2"></i>Pay Fine
+                                </a>
+                                <a href="{{ url_for('dispute.file_dispute', fine_id=fine.id) }}" class="btn btn-warning">
+                                    <i class="fas fa-gavel me-2"></i>File Dispute
+                                </a>
+                            {% endif %}
+                            
+                            {% if fine.status == 'paid' and fine.payments.first() %}
+                                <a href="{{ url_for('fine.receipt', payment_id=fine.payments.first().id) }}" class="btn btn-info">
+                                    <i class="fas fa-file-invoice me-2"></i>View Receipt
+                                </a>
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('fine.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Fines
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            {% if fine.status == 'disputed' and fine.dispute %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-gavel me-2"></i>Dispute Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Dispute Number:</strong> {{ fine.dispute.dispute_number }}</p>
+                        <p><strong>Status:</strong> 
+                            {% if fine.dispute.status == 'pending' %}
+                                <span class="badge bg-warning">Pending</span>
+                            {% elif fine.dispute.status == 'under_review' %}
+                                <span class="badge bg-info">Under Review</span>
+                            {% elif fine.dispute.status == 'approved' %}
+                                <span class="badge bg-success">Approved</span>
+                            {% elif fine.dispute.status == 'rejected' %}
+                                <span class="badge bg-danger">Rejected</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Filed On:</strong> {{ fine.dispute.created_at.strftime('%d %B %Y') }}</p>
+                        <a href="{{ url_for('dispute.view', dispute_id=fine.dispute.id) }}" class="btn btn-outline-info w-100">
+                            <i class="fas fa-eye me-2"></i>View Dispute Details
+                        </a>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if fine.status == 'pending' %}
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Payment Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Due Date:</strong> {{ fine.due_date.strftime('%d %B %Y') }}</p>
+                        <p><strong>Amount Due:</strong> ₹{{ fine.total_amount_due() }}</p>
+                        
+                        {% if fine.is_overdue() %}
+                            <div class="alert alert-danger">
+                                <h6><i class="fas fa-exclamation-circle me-2"></i>Overdue Notice</h6>
+                                <p class="mb-0">This fine is overdue by {{ (fine.due_date - fine.due_date.now()).days|abs }} days. A late penalty of ₹{{ fine.calculate_penalty() }} has been added.</p>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-info-circle me-2"></i>Payment Due</h6>
+                                <p class="mb-0">Please pay this fine by the due date to avoid late penalties.</p>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="{{ url_for('fine.pay', fine_id=fine.id) }}" class="btn btn-success">
+                                <i class="fas fa-money-bill-wave me-2"></i>Pay Now
+                            </a>
+                            <a href="{{ url_for('dispute.file_dispute', fine_id=fine.id) }}" class="btn btn-outline-warning">
+                                <i class="fas fa-gavel me-2"></i>Dispute This Fine
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Fine Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-credit-card me-2"></i>Payment Methods</h6>
+                        <p class="mb-0">You can pay your fine using credit/debit cards, net banking, or UPI.</p>
+                    </div>
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-balance-scale me-2"></i>Dispute Rights</h6>
+                        <p class="mb-0">You have the right to dispute this fine if you believe it was issued incorrectly.</p>
+                    </div>
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>Late Payment</h6>
+                        <p class="mb-0">Fines not paid by the due date will incur additional penalties of 2% per day.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

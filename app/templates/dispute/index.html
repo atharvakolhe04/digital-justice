@@ -1,0 +1,347 @@
+{% extends 'base.html' %}
+
+{% block title %}Disputes - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-gavel me-2"></i>Dispute Management</h2>
+        <div>
+            {% if current_user.is_admin() or current_user.is_court() %}
+                <a href="{{ url_for('dispute.pending') }}" class="btn btn-warning">
+                    <i class="fas fa-clock me-2"></i>Pending Disputes
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white mb-3">
+                                <div class="card-body text-center">
+                                    <h1 class="display-4">{{ stats.total }}</h1>
+                                    <p class="mb-0">Total Disputes</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-dark mb-3">
+                                <div class="card-body text-center">
+                                    <h1 class="display-4">{{ stats.pending }}</h1>
+                                    <p class="mb-0">Pending</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white mb-3">
+                                <div class="card-body text-center">
+                                    <h1 class="display-4">{{ stats.under_review }}</h1>
+                                    <p class="mb-0">Under Review</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white mb-3">
+                                <div class="card-body text-center">
+                                    <h1 class="display-4">{{ stats.resolved }}</h1>
+                                    <p class="mb-0">Resolved</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">My Disputes</h5>
+                <div>
+                    <form class="d-flex" action="{{ url_for('dispute.index') }}" method="GET">
+                        <select name="status" class="form-select me-2">
+                            <option value="all" {% if request.args.get('status') == 'all' or not request.args.get('status') %}selected{% endif %}>All Status</option>
+                            <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="under_review" {% if request.args.get('status') == 'under_review' %}selected{% endif %}>Under Review</option>
+                            <option value="approved" {% if request.args.get('status') == 'approved' %}selected{% endif %}>Approved</option>
+                            <option value="rejected" {% if request.args.get('status') == 'rejected' %}selected{% endif %}>Rejected</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Dispute ID</th>
+                            <th>Fine</th>
+                            <th>Reason</th>
+                            <th>Filed Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if disputes %}
+                            {% for dispute in disputes %}
+                                <tr>
+                                    <td>{{ dispute.dispute_number }}</td>
+                                    <td>
+                                        <a href="{{ url_for('fine.view', fine_id=dispute.fine_id) }}">
+                                            {{ dispute.fine.challan_number }}
+                                        </a>
+                                        <div class="small text-muted">{{ dispute.fine.violation_type }}</div>
+                                    </td>
+                                    <td>{{ dispute.dispute_reason }}</td>
+                                    <td>{{ dispute.created_at.strftime('%d %b %Y') }}</td>
+                                    <td>
+                                        {% if dispute.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif dispute.status == 'under_review' %}
+                                            <span class="badge bg-info">Under Review</span>
+                                        {% elif dispute.status == 'approved' %}
+                                            <span class="badge bg-success">Approved</span>
+                                        {% elif dispute.status == 'rejected' %}
+                                            <span class="badge bg-danger">Rejected</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('dispute.view_dispute', dispute_id=dispute.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        {% if dispute.status == 'pending' and current_user.id == dispute.user_id %}
+                                            <a href="{{ url_for('dispute.withdraw_dispute', dispute_id=dispute.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to withdraw this dispute?')">
+                                                <i class="fas fa-ban"></i> Withdraw
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="empty-state">
+                                        <i class="fas fa-gavel fa-4x text-muted mb-3"></i>
+                                        <h5>No disputes found</h5>
+                                        <p class="text-muted">You haven't filed any disputes yet.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% if disputes and disputes.pages > 1 %}
+            <div class="card-footer">
+                <nav aria-label="Dispute pagination">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if disputes.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('dispute.index', page=disputes.prev_num, status=request.args.get('status', 'all')) }}">Previous</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for page_num in disputes.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                            {% if page_num %}
+                                {% if page_num == disputes.page %}
+                                    <li class="page-item active">
+                                        <a class="page-link" href="#">{{ page_num }}</a>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('dispute.index', page=page_num, status=request.args.get('status', 'all')) }}">{{ page_num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">...</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if disputes.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('dispute.index', page=disputes.next_num, status=request.args.get('status', 'all')) }}">Next</a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Dispute Process</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="text-center mb-3">
+                        <div class="process-icon bg-primary text-white mb-3">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <h5>1. File Dispute</h5>
+                        <p class="text-muted">Submit your dispute with supporting evidence</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center mb-3">
+                        <div class="process-icon bg-info text-white mb-3">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <h5>2. Review</h5>
+                        <p class="text-muted">Officials review your case and evidence</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center mb-3">
+                        <div class="process-icon bg-warning text-dark mb-3">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <h5>3. Communication</h5>
+                        <p class="text-muted">Additional information may be requested</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center mb-3">
+                        <div class="process-icon bg-success text-white mb-3">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h5>4. Resolution</h5>
+                        <p class="text-muted">Final decision is made on your dispute</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Dispute Guidelines</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Provide accurate and truthful information
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Include all relevant evidence to support your case
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Be clear and specific about the reason for your dispute
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Submit your dispute within 30 days of receiving the fine
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            Respond promptly to any requests for additional information
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Frequently Asked Questions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="disputeFAQ">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingOne">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                    How long does the dispute process take?
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#disputeFAQ">
+                                <div class="accordion-body">
+                                    The dispute process typically takes 7-14 working days, depending on the complexity of the case and the volume of disputes being processed.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingTwo">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                    Do I need to pay the fine while my dispute is being reviewed?
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#disputeFAQ">
+                                <div class="accordion-body">
+                                    No, you do not need to pay the fine while your dispute is being reviewed. The payment deadline is paused until a decision is made on your dispute.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingThree">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                    Can I withdraw my dispute?
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#disputeFAQ">
+                                <div class="accordion-body">
+                                    Yes, you can withdraw your dispute at any time before a decision is made. After withdrawing, you will be required to pay the fine within the original deadline or within 7 days, whichever is later.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingFour">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                                    What happens if my dispute is rejected?
+                                </button>
+                            </h2>
+                            <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#disputeFAQ">
+                                <div class="accordion-body">
+                                    If your dispute is rejected, you will be required to pay the original fine within 7 days of the decision. Late penalties may apply if payment is not made within this period.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .process-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        font-size: 24px;
+    }
+    
+    .empty-state {
+        padding: 30px;
+        text-align: center;
+    }
+</style>
+{% endblock %}

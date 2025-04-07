@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}My Profile - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-lg mt-4">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0"><i class="fas fa-user-circle me-2"></i>My Profile</h3>
+                </div>
+                <div class="card-body p-4">
+                    <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab" aria-controls="info" aria-selected="true">
+                                <i class="fas fa-info-circle me-1"></i>Personal Information
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab" aria-controls="security" aria-selected="false">
+                                <i class="fas fa-lock me-1"></i>Security
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="profileTabsContent">
+                        <!-- Personal Information Tab -->
+                        <div class="tab-pane fade show active" id="info" role="tabpanel" aria-labelledby="info-tab">
+                            <form method="POST" action="{{ url_for('auth.profile') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="first_name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ current_user.first_name }}" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="last_name" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ current_user.last_name }}" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="username" class="form-label">Username</label>
+                                        <input type="text" class="form-control" id="username" value="{{ current_user.username }}" readonly>
+                                        <div class="form-text">Username cannot be changed.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="email" value="{{ current_user.email }}" readonly>
+                                        <div class="form-text">Email cannot be changed.</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="phone" class="form-label">Phone Number</label>
+                                        <input type="tel" class="form-control" id="phone" name="phone" value="{{ current_user.phone }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="role" class="form-label">Role</label>
+                                        <input type="text" class="form-control" id="role" value="{{ current_user.role|capitalize }}" readonly>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="address" class="form-label">Address</label>
+                                    <textarea class="form-control" id="address" name="address" rows="3">{{ current_user.address }}</textarea>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">Update Profile</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Security Tab -->
+                        <div class="tab-pane fade" id="security" role="tabpanel" aria-labelledby="security-tab">
+                            <form method="POST" action="{{ url_for('auth.profile') }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                
+                                <div class="mb-3">
+                                    <label for="current_password" class="form-label">Current Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                        <input type="password" class="form-control" id="current_password" name="current_password" placeholder="Enter your current password" required>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('current_password', 'toggleCurrentPassword')">
+                                            <i id="toggleCurrentPassword" class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">New Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                        <input type="password" class="form-control" id="new_password" name="new_password" placeholder="Enter your new password" required>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('new_password', 'toggleNewPassword')">
+                                            <i id="toggleNewPassword" class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="form-text">Password must be at least 8 characters long.</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm your new password" required>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('confirm_password', 'toggleConfirmPassword')">
+                                            <i id="toggleConfirmPassword" class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">Change Password</button>
+                                </div>
+                            </form>
+                            
+                            <hr class="my-4">
+                            
+                            <div class="card bg-light mt-4">
+                                <div class="card-body">
+                                    <h5 class="card-title text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Account Security</h5>
+                                    <p class="card-text">
+                                        For your security, we recommend:
+                                    </p>
+                                    <ul>
+                                        <li>Use a strong, unique password</li>
+                                        <li>Never share your login credentials</li>
+                                        <li>Log out when using shared devices</li>
+                                        <li>Change your password regularly</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card shadow-lg border-0 rounded-lg mt-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Account Activity</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Last Login:</strong> {{ current_user.last_login.strftime('%d %B %Y, %H:%M') if current_user.last_login else 'N/A' }}</p>
+                    <p><strong>Account Created:</strong> {{ current_user.created_at.strftime('%d %B %Y') }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

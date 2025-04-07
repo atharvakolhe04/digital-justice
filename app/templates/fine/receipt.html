@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Payment Receipt - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('fine.index') }}">Fines</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('fine.view', fine_id=payment.fine_id) }}">{{ payment.fine.challan_number }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Receipt</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-lg mb-4">
+                <div class="card-header bg-success text-white text-center py-3">
+                    <h3 class="mb-0"><i class="fas fa-file-invoice me-2"></i>Payment Receipt</h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <h4>Digital Justice System</h4>
+                        <p class="text-muted">Government of India</p>
+                        <div class="badge bg-success p-2 mb-3">PAID</div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Receipt Details</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Receipt Number:</th>
+                                    <td>{{ payment.receipt_number }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Payment Date:</th>
+                                    <td>{{ payment.payment_date.strftime('%d %B %Y, %H:%M') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Payment Method:</th>
+                                    <td>{{ payment.payment_method|title }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Transaction ID:</th>
+                                    <td>{{ payment.transaction_id }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Fine Details</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Challan Number:</th>
+                                    <td>{{ payment.fine.challan_number }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Violation Type:</th>
+                                    <td>{{ payment.fine.violation_type }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Violation Date:</th>
+                                    <td>{{ payment.fine.violation_date.strftime('%d %B %Y') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Issued By:</th>
+                                    <td>Officer ID: {{ payment.fine.issued_by }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h5 class="card-title">Payment Summary</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Fine Amount:</span>
+                                <span>₹{{ payment.fine.amount }}</span>
+                            </div>
+                            
+                            {% if payment.fine.calculate_penalty() > 0 %}
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Late Penalty:</span>
+                                <span>₹{{ payment.fine.calculate_penalty() }}</span>
+                            </div>
+                            <hr>
+                            {% endif %}
+                            
+                            <div class="d-flex justify-content-between fw-bold">
+                                <span>Total Amount Paid:</span>
+                                <span>₹{{ payment.amount }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-success mb-4">
+                        <h6><i class="fas fa-check-circle me-2"></i>Payment Successful</h6>
+                        <p class="mb-0">Your payment has been successfully processed. This receipt serves as proof of payment.</p>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="qr-code-container text-center">
+                                <img src="{{ url_for('static', filename='uploads/qrcodes/receipt_' + payment.id|string + '.png') }}" alt="Receipt QR Code" class="img-fluid" style="max-width: 150px;">
+                                <p class="text-muted mt-2">Scan to verify receipt</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="digital-signature text-center">
+                                <img src="{{ url_for('static', filename='uploads/digital-signature.png') }}" alt="Digital Signature" class="img-fluid" style="max-width: 150px;">
+                                <p class="text-muted mt-2">Digitally Signed</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button onclick="window.print()" class="btn btn-primary">
+                            <i class="fas fa-print me-2"></i>Print Receipt
+                        </button>
+                        <a href="{{ url_for('fine.download_receipt', payment_id=payment.id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-download me-2"></i>Download PDF
+                        </a>
+                        <a href="{{ url_for('fine.view', fine_id=payment.fine_id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Fine Details
+                        </a>
+                    </div>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <p class="text-muted mb-0">This is a computer-generated receipt and does not require a physical signature.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media print {
+        .breadcrumb, .btn, nav, footer {
+            display: none !important;
+        }
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+        .container {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+    }
+</style>
+{% endblock %}

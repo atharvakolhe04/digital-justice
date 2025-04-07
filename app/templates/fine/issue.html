@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+
+{% block title %}Issue Fine - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('fine.index') }}">Fines</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Issue Fine</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>Issue New Fine</h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('fine.issue') }}" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="user_id" class="form-label">Citizen</label>
+                                <select class="form-select" id="user_id" name="user_id" required>
+                                    <option value="" selected disabled>Select citizen</option>
+                                    {% for citizen in citizens %}
+                                        <option value="{{ citizen.id }}">{{ citizen.first_name }} {{ citizen.last_name }} ({{ citizen.username }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="violation_type" class="form-label">Violation Type</label>
+                                <select class="form-select" id="violation_type" name="violation_type" required>
+                                    <option value="" selected disabled>Select violation type</option>
+                                    <option value="Traffic Signal Violation">Traffic Signal Violation</option>
+                                    <option value="Speeding">Speeding</option>
+                                    <option value="Parking Violation">Parking Violation</option>
+                                    <option value="Driving Without License">Driving Without License</option>
+                                    <option value="Driving Without Insurance">Driving Without Insurance</option>
+                                    <option value="Dangerous Driving">Dangerous Driving</option>
+                                    <option value="Public Nuisance">Public Nuisance</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="violation_date" class="form-label">Violation Date</label>
+                                <input type="date" class="form-control" id="violation_date" name="violation_date" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="amount" class="form-label">Fine Amount (₹)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">₹</span>
+                                    <input type="number" class="form-control" id="amount" name="amount" min="100" step="100" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="vehicle_number" class="form-label">Vehicle Number (if applicable)</label>
+                                <input type="text" class="form-control" id="vehicle_number" name="vehicle_number" placeholder="e.g., MH01AB1234">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="license_number" class="form-label">License Number (if applicable)</label>
+                                <input type="text" class="form-control" id="license_number" name="license_number" placeholder="e.g., DL-1234567890123">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="violation_location" class="form-label">Violation Location</label>
+                            <input type="text" class="form-control" id="violation_location" name="violation_location" placeholder="Enter the location of violation" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="violation_description" class="form-label">Violation Description</label>
+                            <textarea class="form-control" id="violation_description" name="violation_description" rows="3" placeholder="Provide details about the violation" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="evidence_file" class="form-label">Evidence (if available)</label>
+                            <input type="file" class="form-control" id="evidence_file" name="evidence_file">
+                            <div class="form-text">Upload photos, videos, or documents as evidence.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div id="file-preview" class="mt-3"></div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>Important Information</h6>
+                            <p class="mb-0">The citizen will be notified about this fine and will have 30 days to pay or dispute it. All actions related to this fine will be logged for transparency.</p>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Issue Fine</button>
+                            <a href="{{ url_for('fine.index') }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('evidence_file');
+        const filePreview = document.getElementById('file-preview');
+        
+        fileInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    if (file.type.includes('image')) {
+                        filePreview.innerHTML = `
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Evidence Preview</h6>
+                                    <img src="${e.target.result}" class="img-fluid" style="max-height: 300px;" alt="Evidence Preview">
+                                </div>
+                            </div>
+                        `;
+                    } else if (file.type.includes('video')) {
+                        filePreview.innerHTML = `
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Video Evidence Selected</h6>
+                                    <i class="fas fa-video fa-5x text-primary mb-3"></i>
+                                    <p>${file.name}</p>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        filePreview.innerHTML = `
+                            <div class="card">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Evidence File Selected</h6>
+                                    <i class="fas fa-file-alt fa-5x text-primary mb-3"></i>
+                                    <p>${file.name}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    });
+</script>
+{% endblock %}

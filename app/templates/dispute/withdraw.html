@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Withdraw Dispute</h5>
+    </div>
+    <div class="card-body">
+        <p>Are you sure you want to withdraw this dispute?</p>
+        <p class="text-muted">Dispute Number: {{ dispute.dispute_number }}</p>
+        <p class="text-muted">Reason: {{ dispute.reason }}</p>
+        
+        <form method="POST" action="{{ url_for('dispute.withdraw_dispute', dispute_id=dispute.id) }}">
+            {{ form.hidden_tag() }}
+            <button type="submit" class="btn btn-danger">Confirm Withdrawal</button>
+            <a href="{{ url_for('dispute.view_dispute', dispute_id=dispute.id) }}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

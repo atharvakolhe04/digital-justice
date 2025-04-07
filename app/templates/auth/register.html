@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="mb-0"><i class="fas fa-user-plus me-2"></i>Register</h3>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="{{ url_for('auth.register') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" placeholder="Enter your first name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" placeholder="Enter your last name" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">Username</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" class="form-control" id="username" name="username" placeholder="Choose a username" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                    <input type="email" class="form-control" id="email" name="email" placeholder="Enter your email" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="password" class="form-label">Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="password" name="password" placeholder="Create a password" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('password', 'togglePassword')">
+                                        <i id="togglePassword" class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                                <div class="form-text">Password must be at least 8 characters long.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="confirm_password" class="form-label">Confirm Password</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password" placeholder="Confirm your password" required>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('confirm_password', 'toggleConfirmPassword')">
+                                        <i id="toggleConfirmPassword" class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                    <input type="tel" class="form-control" id="phone" name="phone" placeholder="Enter your phone number">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="address" class="form-label">Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-home"></i></span>
+                                    <input type="text" class="form-control" id="address" name="address" placeholder="Enter your address">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                            <label class="form-check-label" for="terms">I agree to the <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal">Terms and Conditions</a></label>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Register</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <div class="small">
+                        <a href="{{ url_for('auth.login') }}">Already have an account? Sign in!</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Terms and Conditions Modal -->
+<div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="termsModalLabel">Terms and Conditions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <h6>1. Acceptance of Terms</h6>
+                <p>By registering for the Digital Justice System, you agree to be bound by these Terms and Conditions.</p>
+                
+                <h6>2. User Registration</h6>
+                <p>You agree to provide accurate and complete information during the registration process. You are responsible for maintaining the confidentiality of your account credentials.</p>
+                
+                <h6>3. Privacy Policy</h6>
+                <p>Your personal information will be handled in accordance with our Privacy Policy. By registering, you consent to the collection and use of your information as described in the Privacy Policy.</p>
+                
+                <h6>4. User Conduct</h6>
+                <p>You agree not to use the Digital Justice System for any unlawful purpose or in any way that could damage, disable, or impair the system.</p>
+                
+                <h6>5. Intellectual Property</h6>
+                <p>All content, features, and functionality of the Digital Justice System are owned by the government and are protected by copyright, trademark, and other intellectual property laws.</p>
+                
+                <h6>6. Limitation of Liability</h6>
+                <p>The Digital Justice System is provided "as is" without warranties of any kind, either express or implied.</p>
+                
+                <h6>7. Governing Law</h6>
+                <p>These Terms and Conditions shall be governed by and construed in accordance with the laws of the country, without regard to its conflict of law provisions.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">I Understand</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

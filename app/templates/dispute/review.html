@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+
+{% block title %}Review Dispute - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('dispute.index') }}">Disputes</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('dispute.view', dispute_id=dispute.id) }}">{{ dispute.dispute_number }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Review</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-lg mb-4">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0"><i class="fas fa-balance-scale me-2"></i>Review Dispute</h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Dispute Information</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Dispute ID:</th>
+                                    <td>{{ dispute.dispute_number }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Filed By:</th>
+                                    <td>{{ dispute.user.first_name }} {{ dispute.user.last_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Filed On:</th>
+                                    <td>{{ dispute.created_at.strftime('%d %B %Y, %H:%M') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Dispute Reason:</th>
+                                    <td>{{ dispute.dispute_reason }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Fine Details</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Challan Number:</th>
+                                    <td>
+                                        <a href="{{ url_for('fine.view', fine_id=dispute.fine_id) }}" target="_blank">
+                                            {{ dispute.fine.challan_number }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Violation Type:</th>
+                                    <td>{{ dispute.fine.violation_type }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Violation Date:</th>
+                                    <td>{{ dispute.fine.violation_date.strftime('%d %B %Y') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Fine Amount:</th>
+                                    <td>₹{{ dispute.fine.amount }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Dispute Details</h5>
+                        <div class="p-3 bg-light rounded">
+                            <p>{{ dispute.dispute_details }}</p>
+                        </div>
+                    </div>
+
+                    {% if dispute.evidence_files %}
+                    <div class="mb-4">
+                        <h5>Supporting Evidence</h5>
+                        <div class="row">
+                            {% for evidence in dispute.evidence_files %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        {% if evidence.file_path.endswith(('.jpg', '.jpeg', '.png', '.gif')) %}
+                                            <img src="{{ url_for('static', filename=evidence.file_path) }}" class="card-img-top" alt="Evidence" style="height: 150px; object-fit: cover;">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-truncate">{{ evidence.file_name }}</h6>
+                                                <a href="{{ url_for('static', filename=evidence.file_path) }}" class="btn btn-sm btn-primary" target="_blank">View</a>
+                                            </div>
+                                        {% elif evidence.file_path.endswith(('.mp4', '.avi', '.mov')) %}
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-video fa-3x text-primary mb-3"></i>
+                                                <h6 class="card-title text-truncate">{{ evidence.file_name }}</h6>
+                                                <a href="{{ url_for('static', filename=evidence.file_path) }}" class="btn btn-sm btn-primary" target="_blank">View</a>
+                                            </div>
+                                        {% else %}
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                                                <h6 class="card-title text-truncate">{{ evidence.file_name }}</h6>
+                                                <a href="{{ url_for('static', filename=evidence.file_path) }}" class="btn btn-sm btn-primary" target="_blank">View</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if dispute.clarification_requests %}
+                    <div class="mb-4">
+                        <h5>Clarification Requests</h5>
+                        {% for request in dispute.clarification_requests %}
+                            <div class="card mb-3">
+                                <div class="card-header bg-light">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">Request #{{ loop.index }}</h6>
+                                        <span class="text-muted small">{{ request.created_at.strftime('%d %B %Y, %H:%M') }}</span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Request:</strong> {{ request.request_details }}</p>
+                                    {% if request.is_responded %}
+                                        <p><strong>Response:</strong> {{ request.response }}</p>
+                                        <p class="text-muted small mb-0">Responded on: {{ request.response_date.strftime('%d %B %Y, %H:%M') }}</p>
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <p class="mb-0">Awaiting response from citizen</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" action="{{ url_for('dispute.review', dispute_id=dispute.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-4">
+                            <h5>Review Decision</h5>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="decision" id="approve" value="approve">
+                                <label class="form-check-label" for="approve">
+                                    <span class="text-success"><i class="fas fa-check-circle me-2"></i>Approve Dispute</span>
+                                    <small class="d-block text-muted">The fine will be waived and no payment will be required.</small>
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="decision" id="reject" value="reject">
+                                <label class="form-check-label" for="reject">
+                                    <span class="text-danger"><i class="fas fa-times-circle me-2"></i>Reject Dispute</span>
+                                    <small class="d-block text-muted">The citizen will be required to pay the fine.</small>
+                                </label>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="radio" name="decision" id="request_clarification" value="request_clarification">
+                                <label class="form-check-label" for="request_clarification">
+                                    <span class="text-warning"><i class="fas fa-question-circle me-2"></i>Request Clarification</span>
+                                    <small class="d-block text-muted">Request additional information from the citizen.</small>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="decision_notes_container" class="mb-4">
+                            <label for="decision_notes" class="form-label">Decision Notes</label>
+                            <textarea class="form-control" id="decision_notes" name="decision_notes" rows="4" placeholder="Provide detailed explanation for your decision"></textarea>
+                            <div class="form-text">These notes will be visible to the citizen.</div>
+                        </div>
+                        
+                        <div id="clarification_request_container" class="mb-4 d-none">
+                            <label for="clarification_request" class="form-label">Clarification Request</label>
+                            <textarea class="form-control" id="clarification_request" name="clarification_request" rows="4" placeholder="Specify what additional information you need from the citizen"></textarea>
+                        </div>
+                        
+                        <div class="alert alert-info mb-4">
+                            <h6><i class="fas fa-info-circle me-2"></i>Review Guidelines</h6>
+                            <ul class="mb-0">
+                                <li>Carefully examine all evidence provided by the citizen.</li>
+                                <li>Consider the validity of the dispute reason in relation to the violation.</li>
+                                <li>If additional information is needed, request clarification instead of making an immediate decision.</li>
+                                <li>Provide clear and detailed explanation for your decision.</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Submit Review</button>
+                            <a href="{{ url_for('dispute.view', dispute_id=dispute.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>Citizen Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="avatar-circle me-3">
+                            <span class="initials">{{ dispute.user.first_name[0] }}{{ dispute.user.last_name[0] }}</span>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">{{ dispute.user.first_name }} {{ dispute.user.last_name }}</h6>
+                            <p class="text-muted mb-0">{{ dispute.user.email }}</p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <p><strong>Phone:</strong> {{ dispute.user.phone_number }}</p>
+                        <p><strong>Address:</strong> {{ dispute.user.address }}</p>
+                        <p><strong>ID Number:</strong> {{ dispute.user.id_number }}</p>
+                    </div>
+                    <div class="d-grid">
+                        <a href="{{ url_for('communication.new_message', recipient_id=dispute.user_id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-envelope me-2"></i>Send Message
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Citizen History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Previous Fines</h6>
+                        <p><strong>Total Fines:</strong> {{ user_stats.total_fines }}</p>
+                        <p><strong>Paid Fines:</strong> {{ user_stats.paid_fines }}</p>
+                        <p><strong>Pending Fines:</strong> {{ user_stats.pending_fines }}</p>
+                        <p><strong>Disputed Fines:</strong> {{ user_stats.disputed_fines }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6>Previous Disputes</h6>
+                        <p><strong>Total Disputes:</strong> {{ user_stats.total_disputes }}</p>
+                        <p><strong>Approved Disputes:</strong> {{ user_stats.approved_disputes }}</p>
+                        <p><strong>Rejected Disputes:</strong> {{ user_stats.rejected_disputes }}</p>
+                    </div>
+                    <div class="d-grid">
+                        <a href="{{ url_for('admin.user_history', user_id=dispute.user_id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-search me-2"></i>View Full History
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-file-alt me-2"></i>Related Documents</h5>
+                </div>
+                <div class="card-body">
+                    {% if related_documents %}
+                        <ul class="list-group list-group-flush">
+                            {% for document in related_documents %}
+                                <li class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-0">{{ document.document_type }}</h6>
+                                            <p class="text-muted small mb-0">{{ document.created_at.strftime('%d %B %Y') }}</p>
+                                        </div>
+                                        <a href="{{ url_for('document.view', document_id=document.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-folder-open fa-3x text-muted mb-3"></i>
+                            <p class="mb-0">No related documents found</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .avatar-circle {
+        width: 50px;
+        height: 50px;
+        background-color: #6c757d;
+        text-align: center;
+        border-radius: 50%;
+        -webkit-border-radius: 50%;
+        -moz-border-radius: 50%;
+    }
+    
+    .initials {
+        position: relative;
+        top: 15px;
+        font-size: 20px;
+        line-height: 20px;
+        color: #fff;
+        font-weight: bold;
+    }
+</style>
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const decisionRadios = document.querySelectorAll('input[name="decision"]');
+        const decisionNotesContainer = document.getElementById('decision_notes_container');
+        const clarificationRequestContainer = document.getElementById('clarification_request_container');
+        
+        decisionRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value === 'request_clarification') {
+                    decisionNotesContainer.classList.add('d-none');
+                    clarificationRequestContainer.classList.remove('d-none');
+                } else {
+                    decisionNotesContainer.classList.remove('d-none');
+                    clarificationRequestContainer.classList.add('d-none');
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

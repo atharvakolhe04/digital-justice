@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Dispute Types</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{{ url_for('dispute.index') }}" class="list-group-item list-group-item-action">
+                            All Disputes
+                        </a>
+                        <a href="{{ url_for('dispute.fine_disputes') }}" class="list-group-item list-group-item-action">
+                            Fine Disputes
+                        </a>
+                        <a href="{{ url_for('dispute.document_disputes') }}" class="list-group-item list-group-item-action">
+                            Document Disputes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">File Dispute</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('dispute.file_dispute', fine_id=fine.id) }}" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Dispute Type</label>
+                            {{ form.dispute_type(class="form-select", required="required") }}
+                            {% for error in form.dispute_type.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Reason for Dispute</label>
+                            {{ form.reason(class="form-control", rows="4", required="required") }}
+                            {% for error in form.reason.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Supporting Documents</label>
+                            {{ form.evidence(class="form-control", multiple="multiple", accept=".pdf,.jpg,.jpeg,.png") }}
+                            <div class="form-text">Upload any documents that support your dispute (PDF, JPG, PNG)</div>
+                            {% for error in form.evidence.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Contact Information</label>
+                            <input type="text" class="form-control" name="contact_info" value="{{ current_user.phone }}" readonly>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Submit Dispute</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

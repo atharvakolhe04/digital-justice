@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Verify Document - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('document.index') }}">Documents</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('document.view', document_id=document.id) }}">{{ document.title }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Verify</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white text-center py-3">
+                    <h3 class="mb-0"><i class="fas fa-check-circle me-2"></i>Document Verification</h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="alert alert-info mb-4">
+                        <h5><i class="fas fa-info-circle me-2"></i>Verification Process</h5>
+                        <p class="mb-0">As an authorized official, you are about to verify the authenticity of this document. This action will be logged and cannot be undone.</p>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Document Details</h5>
+                            <table class="table">
+                                <tr>
+                                    <th>Title:</th>
+                                    <td>{{ document.title }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Type:</th>
+                                    <td>{{ document.document_type }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Owner:</th>
+                                    <td>{{ document.owner.first_name }} {{ document.owner.last_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Uploaded On:</th>
+                                    <td>{{ document.created_at.strftime('%d %B %Y') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Verification Code:</th>
+                                    <td>{{ document.verification_code }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="document-preview text-center p-3 border rounded">
+                                {% if document.file_path.endswith(('.jpg', '.jpeg', '.png', '.gif')) %}
+                                    <img src="{{ url_for('static', filename=document.file_path) }}" alt="{{ document.title }}" class="img-fluid" style="max-height: 300px;">
+                                {% elif document.file_path.endswith('.pdf') %}
+                                    <div class="p-5 bg-light">
+                                        <i class="fas fa-file-pdf fa-5x text-danger mb-3"></i>
+                                        <p>PDF Document</p>
+                                    </div>
+                                {% else %}
+                                    <div class="p-5 bg-light">
+                                        <i class="fas fa-file-alt fa-5x text-primary mb-3"></i>
+                                        <p>Document File</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('document.verify', document_id=document.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Verification Status</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="verification_status" id="status_verified" value="verified" checked>
+                                <label class="form-check-label" for="status_verified">
+                                    <i class="fas fa-check-circle text-success me-2"></i>Verify as Authentic
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="verification_status" id="status_rejected" value="rejected">
+                                <label class="form-check-label" for="status_rejected">
+                                    <i class="fas fa-times-circle text-danger me-2"></i>Reject as Inauthentic
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">Submit Verification</button>
+                            <a href="{{ url_for('document.view', document_id=document.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

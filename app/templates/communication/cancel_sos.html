@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Cancel SOS Alert - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0"><i class="fas fa-times-circle me-2"></i>Cancel SOS Alert</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note:</strong> You are about to cancel an active SOS alert. Police will be notified of this cancellation.
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Alert Details</h5>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <tr>
+                                    <th style="width: 30%">Alert ID</th>
+                                    <td>#{{ alert.id }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Location</th>
+                                    <td>{{ alert.location }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Description</th>
+                                    <td>{{ alert.description }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Created</th>
+                                    <td>{{ alert.created_at.strftime('%d %b, %Y %H:%M') }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('communication.cancel_sos', alert_id=alert.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Reason for Cancellation</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="3" required
+                                placeholder="Please explain why you are cancelling this SOS alert"></textarea>
+                            <div class="form-text">This information will be shared with police officers.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                <i class="fas fa-times-circle me-2"></i>Confirm Cancellation
+                            </button>
+                            <a href="{{ url_for('communication.sos_alerts') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Back to Alerts
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

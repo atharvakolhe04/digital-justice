@@ -1,0 +1,404 @@
+{% extends 'base.html' %}
+
+{% block title %}Dispute Details - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('dispute.index') }}">Disputes</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ dispute.dispute_number }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="fas fa-gavel me-2"></i>Dispute: {{ dispute.dispute_number }}</h4>
+                    <div>
+                        {% if dispute.status == 'pending' %}
+                            <span class="badge bg-warning">Pending</span>
+                        {% elif dispute.status == 'under_review' %}
+                            <span class="badge bg-info">Under Review</span>
+                        {% elif dispute.status == 'approved' %}
+                            <span class="badge bg-success">Approved</span>
+                        {% elif dispute.status == 'rejected' %}
+                            <span class="badge bg-danger">Rejected</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Dispute Information</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Filed By:</th>
+                                    <td>{{ dispute.user.first_name }} {{ dispute.user.last_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Filed On:</th>
+                                    <td>{{ dispute.created_at.strftime('%d %B %Y, %H:%M') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Dispute Reason:</th>
+                                    <td>{{ dispute.dispute_reason }}</td>
+                                </tr>
+                                {% if dispute.reviewer_id %}
+                                <tr>
+                                    <th>Reviewed By:</th>
+                                    <td>{{ dispute.reviewer.first_name }} {{ dispute.reviewer.last_name }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if dispute.decision_date %}
+                                <tr>
+                                    <th>Decision Date:</th>
+                                    <td>{{ dispute.decision_date.strftime('%d %B %Y, %H:%M') }}</td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Related Fine</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Challan Number:</th>
+                                    <td>
+                                        <a href="{{ url_for('fine.view', fine_id=dispute.fine_id) }}">
+                                            {{ dispute.fine.challan_number }}
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Violation Type:</th>
+                                    <td>{{ dispute.fine.violation_type }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Violation Date:</th>
+                                    <td>{{ dispute.fine.violation_date.strftime('%d %B %Y') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Fine Amount:</th>
+                                    <td>₹{{ dispute.fine.amount }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Dispute Details</h5>
+                        <div class="p-3 bg-light rounded">
+                            <p>{{ dispute.dispute_details }}</p>
+                        </div>
+                    </div>
+
+                    {% if dispute.evidence_files %}
+                    <div class="mb-4">
+                        <h5>Supporting Evidence</h5>
+                        <div class="row">
+                            {% for evidence in dispute.evidence_files %}
+                                <div class="col-md-4 mb-3">
+                                    <div class="card h-100">
+                                        {% if evidence.file_path.endswith(('.jpg', '.jpeg', '.png', '.gif')) %}
+                                            <img src="{{ url_for('static', filename=evidence.file_path) }}" class="card-img-top" alt="Evidence" style="height: 150px; object-fit: cover;">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-truncate">{{ evidence.file_name }}</h6>
+                                                <a href="{{ url_for('static', filename=evidence.file_path) }}" class="btn btn-sm btn-primary" target="_blank">View</a>
+                                            </div>
+                                        {% elif evidence.file_path.endswith(('.mp4', '.avi', '.mov')) %}
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-video fa-3x text-primary mb-3"></i>
+                                                <h6 class="card-title text-truncate">{{ evidence.file_name }}</h6>
+                                                <a href="{{ url_for('static', filename=evidence.file_path) }}" class="btn btn-sm btn-primary" target="_blank">View</a>
+                                            </div>
+                                        {% else %}
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-file-alt fa-3x text-primary mb-3"></i>
+                                                <h6 class="card-title text-truncate">{{ evidence.file_name }}</h6>
+                                                <a href="{{ url_for('static', filename=evidence.file_path) }}" class="btn btn-sm btn-primary" target="_blank">View</a>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if dispute.status == 'approved' or dispute.status == 'rejected' %}
+                    <div class="mb-4">
+                        <h5>Decision</h5>
+                        <div class="p-3 {% if dispute.status == 'approved' %}bg-success{% else %}bg-danger{% endif %} bg-opacity-10 rounded">
+                            <h6 class="{% if dispute.status == 'approved' %}text-success{% else %}text-danger{% endif %}">
+                                {% if dispute.status == 'approved' %}
+                                    <i class="fas fa-check-circle me-2"></i>Dispute Approved
+                                {% else %}
+                                    <i class="fas fa-times-circle me-2"></i>Dispute Rejected
+                                {% endif %}
+                            </h6>
+                            <p>{{ dispute.decision_notes }}</p>
+                            {% if dispute.decision_date %}
+                            <p class="text-muted small mb-0">Reviewed on: {{ dispute.decision_date.strftime('%d %B %Y, %H:%M') }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if dispute.status == 'under_review' and dispute.clarification_requests %}
+                    <div class="mb-4">
+                        <h5>Additional Information Requested</h5>
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>Clarification Needed</h6>
+                            <p>{{ dispute.clarification_requests[0].request_details }}</p>
+                            <p class="mb-0"><strong>Requested on:</strong> {{ dispute.clarification_requests[0].created_at.strftime('%d %B %Y, %H:%M') }}</p>
+                        </div>
+                        
+                        {% if not dispute.clarification_requests[0].is_responded %}
+                        <form method="POST" action="{{ url_for('dispute.respond_clarification', dispute_id=dispute.id, request_id=dispute.clarification_requests[0].id) }}" enctype="multipart/form-data">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="mb-3">
+                                <label for="response" class="form-label">Your Response</label>
+                                <textarea class="form-control" id="response" name="response" rows="3" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="additional_evidence" class="form-label">Additional Evidence (if required)</label>
+                                <input type="file" class="form-control" id="additional_evidence" name="additional_evidence" multiple>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Submit Response</button>
+                        </form>
+                        {% else %}
+                        <div class="p-3 bg-light rounded mt-3">
+                            <h6>Your Response</h6>
+                            <p>{{ dispute.clarification_requests[0].response }}</p>
+                            <p class="mb-0"><strong>Responded on:</strong> {{ dispute.clarification_requests[0].response_date.strftime('%d %B %Y, %H:%M') }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            {% if current_user.id == dispute.user_id and dispute.status == 'pending' %}
+                                <a href="{{ url_for('dispute.withdraw_dispute', dispute_id=dispute.id) }}" class="btn btn-danger" onclick="return confirm('Are you sure you want to withdraw this dispute?')">
+                                    <i class="fas fa-times me-2"></i>Withdraw Dispute
+                                </a>
+                            {% endif %}
+                            
+                            {% if (current_user.is_admin() or current_user.is_court()) and dispute.status == 'pending' %}
+                                <a href="{{ url_for('dispute.review', dispute_id=dispute.id) }}" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i>Review Dispute
+                                </a>
+                            {% endif %}
+                        </div>
+                        <a href="{{ url_for('dispute.index') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Disputes
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Dispute Timeline</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-0">Dispute Filed</h6>
+                                <p class="text-muted small mb-0">{{ dispute.created_at.strftime('%d %B %Y, %H:%M') }}</p>
+                                <p class="mb-0">Dispute submitted with {{ dispute.evidence_files|length }} evidence files</p>
+                            </div>
+                        </div>
+                        
+                        {% if dispute.status != 'pending' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-0">Under Review</h6>
+                                <p class="text-muted small mb-0">{{ dispute.updated_at.strftime('%d %B %Y, %H:%M') }}</p>
+                                <p class="mb-0">Dispute assigned for review</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if dispute.clarification_requests %}
+                            {% for request in dispute.clarification_requests %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-0">Additional Information Requested</h6>
+                                    <p class="text-muted small mb-0">{{ request.created_at.strftime('%d %B %Y, %H:%M') }}</p>
+                                    <p class="mb-0">Clarification requested by reviewer</p>
+                                </div>
+                            </div>
+                            
+                            {% if request.is_responded %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-secondary"></div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-0">Response Submitted</h6>
+                                    <p class="text-muted small mb-0">{{ request.response_date.strftime('%d %B %Y, %H:%M') }}</p>
+                                    <p class="mb-0">Additional information provided</p>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                        
+                        {% if dispute.status == 'approved' or dispute.status == 'rejected' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker {% if dispute.status == 'approved' %}bg-success{% else %}bg-danger{% endif %}"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-0">
+                                    {% if dispute.status == 'approved' %}
+                                        Dispute Approved
+                                    {% else %}
+                                        Dispute Rejected
+                                    {% endif %}
+                                </h6>
+                                <p class="text-muted small mb-0">{{ dispute.decision_date.strftime('%d %B %Y, %H:%M') }}</p>
+                                <p class="mb-0">
+                                    {% if dispute.status == 'approved' %}
+                                        Fine has been waived
+                                    {% else %}
+                                        Fine payment is now due
+                                    {% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            {% if current_user.is_admin() or current_user.is_court() %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-user me-2"></i>Citizen Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="avatar-circle me-3">
+                            <span class="initials">{{ dispute.user.first_name[0] }}{{ dispute.user.last_name[0] }}</span>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">{{ dispute.user.first_name }} {{ dispute.user.last_name }}</h6>
+                            <p class="text-muted mb-0">{{ dispute.user.email }}</p>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <p><strong>Phone:</strong> {{ dispute.user.phone_number }}</p>
+                        <p><strong>Address:</strong> {{ dispute.user.address }}</p>
+                        <p><strong>ID Number:</strong> {{ dispute.user.id_number }}</p>
+                    </div>
+                    <div class="d-grid">
+                        <a href="{{ url_for('communication.new_message', recipient_id=dispute.user_id) }}" class="btn btn-outline-primary">
+                            <i class="fas fa-envelope me-2"></i>Send Message
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Dispute Information</h5>
+                </div>
+                <div class="card-body">
+                    {% if dispute.status == 'pending' %}
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-clock me-2"></i>Pending Review</h6>
+                        <p class="mb-0">Your dispute is waiting to be reviewed by the authorities. You will be notified when there is an update.</p>
+                    </div>
+                    {% elif dispute.status == 'under_review' %}
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-search me-2"></i>Under Review</h6>
+                        <p class="mb-0">Your dispute is currently being reviewed. You may be asked to provide additional information.</p>
+                    </div>
+                    {% elif dispute.status == 'approved' %}
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-check-circle me-2"></i>Dispute Approved</h6>
+                        <p class="mb-0">Your dispute has been approved. The fine has been waived and no payment is required.</p>
+                    </div>
+                    {% elif dispute.status == 'rejected' %}
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-times-circle me-2"></i>Dispute Rejected</h6>
+                        <p class="mb-0">Your dispute has been rejected. Please pay the fine within 7 days to avoid additional penalties.</p>
+                    </div>
+                    {% endif %}
+
+                    <div class="alert alert-secondary">
+                        <h6><i class="fas fa-question-circle me-2"></i>Need Help?</h6>
+                        <p class="mb-0">If you have any questions about your dispute, please contact our support team at <a href="mailto:support@digitaljustice.gov.in">support@digitaljustice.gov.in</a> or call our helpline at 1800-123-4567.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline {
+        position: relative;
+        padding: 20px 0;
+    }
+    
+    .timeline:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 20px;
+        height: 100%;
+        width: 2px;
+        background: #e9ecef;
+    }
+    
+    .timeline-item {
+        position: relative;
+        padding-left: 40px;
+        padding-bottom: 20px;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        top: 0;
+        left: 15px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        z-index: 1;
+    }
+    
+    .timeline-content {
+        padding: 10px 15px;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+    
+    .avatar-circle {
+        width: 50px;
+        height: 50px;
+        background-color: #6c757d;
+        text-align: center;
+        border-radius: 50%;
+        -webkit-border-radius: 50%;
+        -moz-border-radius: 50%;
+    }
+    
+    .initials {
+        position: relative;
+        top: 15px;
+        font-size: 20px;
+        line-height: 20px;
+        color: #fff;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}

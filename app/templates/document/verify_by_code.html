@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Document Verification - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                <div class="card-header bg-success text-white text-center py-4">
+                    <h3 class="mb-0"><i class="fas fa-check-circle me-2"></i>Document Verification</h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="text-center mb-4">
+                        <div class="verification-badge">
+                            <i class="fas fa-shield-alt fa-4x text-success mb-3"></i>
+                            <h4>Document Verified</h4>
+                            <p class="lead">This document has been verified in the Digital Justice System.</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Document Details</h5>
+                            <table class="table">
+                                <tr>
+                                    <th>Title:</th>
+                                    <td>{{ document.title }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Type:</th>
+                                    <td>{{ document.document_type }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Owner:</th>
+                                    <td>{{ document.owner.first_name }} {{ document.owner.last_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Verification Code:</th>
+                                    <td>{{ document.verification_code }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Verification Status:</th>
+                                    <td>
+                                        {% if document.is_verified %}
+                                            <span class="badge bg-success">Verified</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pending Verification</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if document.is_verified and document.verified_at %}
+                                <tr>
+                                    <th>Verified On:</th>
+                                    <td>{{ document.verified_at.strftime('%d %B %Y') }}</td>
+                                </tr>
+                                {% endif %}
+                                {% if document.expiry_date %}
+                                <tr>
+                                    <th>Expiry Date:</th>
+                                    <td>
+                                        {{ document.expiry_date.strftime('%d %B %Y') }}
+                                        {% if document.is_expired() %}
+                                            <span class="badge bg-danger">Expired</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="document-preview text-center p-3 border rounded">
+                                {% if document.file_path.endswith(('.jpg', '.jpeg', '.png', '.gif')) %}
+                                    <img src="{{ url_for('static', filename=document.file_path) }}" alt="{{ document.title }}" class="img-fluid" style="max-height: 300px;">
+                                {% elif document.file_path.endswith('.pdf') %}
+                                    <div class="p-5 bg-light">
+                                        <i class="fas fa-file-pdf fa-5x text-danger mb-3"></i>
+                                        <p>PDF Document</p>
+                                    </div>
+                                {% else %}
+                                    <div class="p-5 bg-light">
+                                        <i class="fas fa-file-alt fa-5x text-primary mb-3"></i>
+                                        <p>Document File</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Verification Information</h6>
+                        <p class="mb-0">This verification confirms that the document is registered in the Digital Justice System. For additional verification, please contact the issuing authority.</p>
+                    </div>
+
+                    {% if current_user.is_authenticated %}
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary">Return to Dashboard</a>
+                        </div>
+                    {% else %}
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('main.index') }}" class="btn btn-primary">Return to Home</a>
+                            <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary">Login to Digital Justice System</a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

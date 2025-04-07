@@ -1,0 +1,305 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Dashboard</h1>
+    <p class="lead">Welcome back, {{ current_user.first_name or current_user.username }}!</p>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        {% if current_user.is_admin() %}
+            <!-- Admin Stats -->
+            <div class="col-md-3">
+                <div class="stats-card bg-primary">
+                    <h3>{{ total_users }}</h3>
+                    <p>Total Users</p>
+                    <i class="fas fa-users"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card bg-success">
+                    <h3>{{ total_documents }}</h3>
+                    <p>Total Documents</p>
+                    <i class="fas fa-file-alt"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card bg-warning">
+                    <h3>{{ total_fines }}</h3>
+                    <p>Total Fines</p>
+                    <i class="fas fa-receipt"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card bg-danger">
+                    <h3>{{ total_disputes }}</h3>
+                    <p>Total Disputes</p>
+                    <i class="fas fa-gavel"></i>
+                </div>
+            </div>
+        {% elif current_user.is_police() %}
+            <!-- Police Stats -->
+            <div class="col-md-4">
+                <div class="stats-card bg-primary">
+                    <h3>{{ issued_fines|length }}</h3>
+                    <p>Fines Issued</p>
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card bg-warning">
+                    <h3>{{ pending_disputes }}</h3>
+                    <p>Pending Disputes</p>
+                    <i class="fas fa-gavel"></i>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card bg-success">
+                    <h3>{{ documents|selectattr('is_verified', 'equalto', true)|list|length }}</h3>
+                    <p>Documents Verified</p>
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        {% elif current_user.is_court() %}
+            <!-- Court Stats -->
+            <div class="col-md-4">
+                <div class="stats-card bg-primary">
+                    <h3>{{ pending_disputes|length }}</h3>
+                    <p>Assigned Disputes</p>
+                    <i class="fas fa-gavel"></i>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card bg-success">
+                    <h3>{{ pending_disputes|selectattr('status', 'equalto', 'approved')|list|length }}</h3>
+                    <p>Approved Disputes</p>
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stats-card bg-danger">
+                    <h3>{{ pending_disputes|selectattr('status', 'equalto', 'rejected')|list|length }}</h3>
+                    <p>Rejected Disputes</p>
+                    <i class="fas fa-times-circle"></i>
+                </div>
+            </div>
+        {% else %}
+            <!-- Citizen Stats -->
+            <div class="col-md-3">
+                <div class="stats-card bg-primary">
+                    <h3>{{ documents|length }}</h3>
+                    <p>My Documents</p>
+                    <i class="fas fa-file-alt"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card bg-warning">
+                    <h3>{{ fines|length }}</h3>
+                    <p>My Fines</p>
+                    <i class="fas fa-receipt"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card bg-danger">
+                    <h3>{{ fines|selectattr('status', 'equalto', 'pending')|list|length }}</h3>
+                    <p>Pending Fines</p>
+                    <i class="fas fa-exclamation-circle"></i>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stats-card bg-success">
+                    <h3>{{ disputes|length }}</h3>
+                    <p>My Disputes</p>
+                    <i class="fas fa-gavel"></i>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <a href="{{ url_for('document.upload') }}" class="btn btn-outline-primary btn-lg w-100">
+                                <i class="fas fa-upload mb-2"></i><br>
+                                Upload Document
+                            </a>
+                        </div>
+                        {% if current_user.is_police() or current_user.is_admin() %}
+                        <div class="col-md-3 text-center mb-3">
+                            <a href="{{ url_for('fine.issue') }}" class="btn btn-outline-warning btn-lg w-100">
+                                <i class="fas fa-ticket-alt mb-2"></i><br>
+                                Issue Fine
+                            </a>
+                        </div>
+                        {% else %}
+                        <div class="col-md-3 text-center mb-3">
+                            <a href="{{ url_for('fine.search') }}" class="btn btn-outline-warning btn-lg w-100">
+                                <i class="fas fa-search mb-2"></i><br>
+                                Search Fines
+                            </a>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-3 text-center mb-3">
+                            <a href="{{ url_for('communication.messages') }}" class="btn btn-outline-info btn-lg w-100">
+                                <i class="fas fa-envelope mb-2"></i><br>
+                                Messages
+                            </a>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <a href="{{ url_for('communication.sos_alerts') }}" class="btn btn-outline-danger btn-lg w-100">
+                                <i class="fas fa-exclamation-triangle mb-2"></i><br>
+                                SOS Alert
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Documents -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Documents</h5>
+                    <a href="{{ url_for('document.index') }}" class="btn btn-sm btn-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if documents %}
+                        <div class="list-group">
+                            {% for document in documents %}
+                                <a href="{{ url_for('document.view', document_id=document.id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ document.title }}</h6>
+                                        <small>{{ document.created_at.strftime('%d %b %Y') }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ document.document_type }}</p>
+                                    <small class="text-muted">
+                                        {% if document.is_verified %}
+                                            <span class="badge bg-success">Verified</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">Pending Verification</span>
+                                        {% endif %}
+                                    </small>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No documents found.</p>
+                        <a href="{{ url_for('document.upload') }}" class="btn btn-primary">Upload Document</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Fines -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Fines</h5>
+                    <a href="{{ url_for('fine.index') }}" class="btn btn-sm btn-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if fines %}
+                        <div class="list-group">
+                            {% for fine in fines %}
+                                <a href="{{ url_for('fine.view', fine_id=fine.id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ fine.violation_type }}</h6>
+                                        <small>{{ fine.created_at.strftime('%d %b %Y') }}</small>
+                                    </div>
+                                    <p class="mb-1">₹{{ fine.amount }}</p>
+                                    <small class="text-muted">
+                                        {% if fine.status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif fine.status == 'paid' %}
+                                            <span class="badge bg-success">Paid</span>
+                                        {% elif fine.status == 'disputed' %}
+                                            <span class="badge bg-info">Disputed</span>
+                                        {% elif fine.status == 'waived' %}
+                                            <span class="badge bg-secondary">Waived</span>
+                                        {% endif %}
+                                    </small>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No fines found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Disputes and Notifications -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Disputes</h5>
+                    <a href="{{ url_for('dispute.index') }}" class="btn btn-sm btn-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if disputes %}
+                        <div class="list-group">
+                            {% for dispute in disputes %}
+                                <a href="{{ url_for('dispute.view_dispute', dispute_id=dispute.id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Dispute #{{ dispute.dispute_number }}</h6>
+                                        <small>{{ dispute.created_at.strftime('%Y-%m-%d') }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ dispute.reason }}</p>
+                                    <small class="text-muted">Status: {{ dispute.status }}</small>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No disputes found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Notifications</h5>
+                    <a href="{{ url_for('communication.notifications') }}" class="btn btn-sm btn-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    {% if notifications %}
+                        <div class="list-group">
+                            {% for notification in notifications %}
+                                <div class="list-group-item {% if not notification.is_read %}bg-light{% endif %}">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ notification.title }}</h6>
+                                        <small>{{ notification.created_at.strftime('%d %b %Y') }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ notification.message }}</p>
+                                    {% if not notification.is_read %}
+                                        <button class="btn btn-sm btn-outline-primary mt-2 mark-notification-read" data-notification-id="{{ notification.id }}">
+                                            Mark as Read
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No notifications found.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

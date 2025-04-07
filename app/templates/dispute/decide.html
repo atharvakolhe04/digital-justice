@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Decide Dispute - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>Decide Dispute <small class="text-muted">#{{ dispute.dispute_number }}</small></h2>
+            
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Dispute Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Filed By:</strong> {{ dispute.user.first_name }} {{ dispute.user.last_name }}</p>
+                            <p><strong>Filed Date:</strong> {{ dispute.created_at.strftime('%Y-%m-%d') }}</p>
+                            <p><strong>Reason:</strong> {{ dispute.reason }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Fine:</strong> {{ fine.challan_number }}</p>
+                            <p><strong>Violation:</strong> {{ fine.violation_type }}</p>
+                            <p><strong>Amount:</strong> ₹{{ "%.2f"|format(fine.amount) }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Evidence -->
+            {% if dispute.evidences.count() > 0 %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Supporting Evidence</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for evidence in dispute.evidences %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ evidence.title }}</h6>
+                                    <p class="card-text">{{ evidence.description }}</p>
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            Uploaded by {{ evidence.user.first_name }} {{ evidence.user.last_name }} on {{ evidence.uploaded_at.strftime('%Y-%m-%d') }}
+                                        </small>
+                                    </p>
+                                    {% if evidence.file_type in ['jpg', 'jpeg', 'png', 'gif'] %}
+                                    <img src="{{ url_for('static', filename='uploads/' + evidence.file_path) }}" 
+                                         class="img-fluid rounded" 
+                                         alt="{{ evidence.title }}">
+                                    {% elif evidence.file_type in ['pdf', 'doc', 'docx'] %}
+                                    <a href="{{ url_for('static', filename='uploads/' + evidence.file_path) }}" class="btn btn-sm btn-primary" target="_blank">
+                                        View Document
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Decision Form -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Make Decision</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('dispute.decide', dispute_id=dispute.id) }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            <label for="decision" class="form-label">Decision</label>
+                            <select class="form-select" id="decision" name="decision" required>
+                                <option value="">Select a decision</option>
+                                <option value="approved">Approve (Fine Waived)</option>
+                                <option value="rejected">Reject (Fine Must be Paid)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Reason for Decision</label>
+                            <textarea class="form-control" id="reason" name="reason" rows="4" required></textarea>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Submit Decision</button>
+                        <a href="{{ url_for('dispute.view_dispute', dispute_id=dispute.id) }}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

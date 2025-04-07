@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}SOS Alerts - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-exclamation-triangle text-danger me-2"></i>SOS Alerts</h1>
+        {% if current_user.is_citizen() %}
+            <a href="{{ url_for('communication.new_sos') }}" class="btn btn-danger">
+                <i class="fas fa-plus-circle me-2"></i>New SOS Alert
+            </a>
+        {% endif %}
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>SOS Alerts</strong> are for emergency situations only. Police will be immediately notified when you create an alert.
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Alerts Section -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-danger text-white">
+            <h5 class="mb-0"><i class="fas fa-bell me-2"></i>Active Alerts</h5>
+        </div>
+        <div class="card-body">
+            {% if active_alerts %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Alert ID</th>
+                                <th>Location</th>
+                                <th>Description</th>
+                                <th>Created</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in active_alerts %}
+                                <tr>
+                                    <td>#{{ alert.id }}</td>
+                                    <td>{{ alert.location }}</td>
+                                    <td>{{ alert.description }}</td>
+                                    <td>{{ alert.created_at|timeago }}</td>
+                                    <td><span class="badge bg-danger">Active</span></td>
+                                    <td>
+                                        {% if current_user.is_police() or current_user.is_admin() %}
+                                            <a href="{{ url_for('communication.resolve_sos', sos_id=alert.id) }}" class="btn btn-sm btn-success">
+                                                <i class="fas fa-check-circle"></i> Resolve
+                                            </a>
+                                        {% elif current_user.is_citizen() and alert.user_id == current_user.id %}
+                                            <a href="{{ url_for('communication.cancel_sos', alert_id=alert.id) }}" class="btn btn-sm btn-warning">
+                                                <i class="fas fa-times-circle"></i> Cancel
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-check-circle text-success fa-4x mb-3"></i>
+                    <h5>No active alerts</h5>
+                    <p class="text-muted">There are currently no active SOS alerts.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Resolved Alerts Section -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="fas fa-history me-2"></i>Resolved Alerts</h5>
+        </div>
+        <div class="card-body">
+            {% if resolved_alerts %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Alert ID</th>
+                                <th>Location</th>
+                                <th>Description</th>
+                                <th>Created</th>
+                                <th>Resolved</th>
+                                <th>Status</th>
+                                <th>Resolved By</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for alert in resolved_alerts %}
+                                <tr>
+                                    <td>#{{ alert.id }}</td>
+                                    <td>{{ alert.location }}</td>
+                                    <td>{{ alert.description }}</td>
+                                    <td>{{ alert.created_at.strftime('%d %b, %Y %H:%M') }}</td>
+                                    <td>{{ alert.resolved_at.strftime('%d %b, %Y %H:%M') if alert.resolved_at else 'N/A' }}</td>
+                                    <td>
+                                        {% if alert.status == 'resolved' %}
+                                            <span class="badge bg-success">Resolved</span>
+                                        {% elif alert.status == 'false_alarm' %}
+                                            <span class="badge bg-warning">False Alarm</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ alert.status|title }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if alert.resolver %}
+                                            {{ alert.resolver.first_name }} {{ alert.resolver.last_name }}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ alert.resolution_notes or 'No notes' }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-history text-muted fa-4x mb-3"></i>
+                    <h5>No resolved alerts</h5>
+                    <p class="text-muted">There are no resolved SOS alerts in your history.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+
+{% block title %}Pending Disputes - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>Pending Disputes</h2>
+            
+            <!-- Statistics -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h1 mb-0">{{ stats.total }}</div>
+                                <div class="text-muted">Total Pending</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h1 mb-0">{{ stats.under_review }}</div>
+                                <div class="text-muted">Under Review</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h1 mb-0">{{ stats.approved }}</div>
+                                <div class="text-muted">Approved</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="h1 mb-0">{{ stats.rejected }}</div>
+                                <div class="text-muted">Rejected</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disputes List -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Dispute #</th>
+                                    <th>Reason</th>
+                                    <th>Submitted</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for dispute in disputes.items %}
+                                <tr>
+                                    <td>{{ dispute.dispute_number }}</td>
+                                    <td>{{ dispute.reason }}</td>
+                                    <td>{{ dispute.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('dispute.view_dispute', dispute_id=dispute.id) }}" class="btn btn-sm btn-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                            <a href="{{ url_for('dispute.decide', dispute_id=dispute.id) }}" class="btn btn-sm btn-success">
+                                                <i class="fas fa-check"></i> Decide
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    {% if disputes.pages > 1 %}
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if disputes.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('dispute.pending', page=disputes.prev_num) }}">Previous</a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for page in disputes.iter_pages() %}
+                            <li class="page-item {% if page == disputes.page %}active{% endif %}">
+                                <a class="page-link" href="{{ url_for('dispute.pending', page=page) }}">{{ page }}</a>
+                            </li>
+                            {% endfor %}
+                            
+                            {% if disputes.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('dispute.pending', page=disputes.next_num) }}">Next</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Pre-process data from Jinja2 templates to avoid mixing template syntax with JavaScript
+    const performanceData = {
+        today: {{ performance.today|default(0) if performance else 0 }},
+        yesterday: {{ performance.yesterday|default(0) if performance else 0 }},
+        week: {{ performance.week|default(0) if performance else 0 }},
+        month: {{ performance.month|default(0) if performance else 0 }}
+    };
+    
+    // Pre-process category data
+    const categoryLabels = [{% if categories and categories|length > 0 %}{% for category in categories %}"{{ category.reason|e }}"{% if not loop.last %},{% endif %}{% endfor %}{% else %}"No Data"{% endif %}];
+    const categoryValues = [{% if categories and categories|length > 0 %}{% for category in categories %}{{ category.count }}{% if not loop.last %},{% endif %}{% endfor %}{% else %}1{% endif %}];
+</script>
+
+<script>
+    // Use a self-executing function to isolate variables and avoid conflicts
+    (function() {
+        // Wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Performance chart initialization
+            initPerformanceChart();
+            // Category chart initialization
+            initCategoryChart();
+        });
+
+        // Function to initialize the performance chart
+        function initPerformanceChart() {
+            const reviewChart = document.getElementById('reviewChart');
+            if (!reviewChart) return;
+
+            // Create the chart
+            new Chart(reviewChart.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['Today', 'Yesterday', 'This Week', 'This Month'],
+                    datasets: [{
+                        label: 'Disputes Reviewed',
+                        data: [performanceData.today, performanceData.yesterday, performanceData.week, performanceData.month],
+                        backgroundColor: [
+                            'rgba(54, 162, 235, 0.5)',
+                            'rgba(75, 192, 192, 0.5)',
+                            'rgba(153, 102, 255, 0.5)',
+                            'rgba(255, 159, 64, 0.5)'
+                        ],
+                        borderColor: [
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Function to initialize the category chart
+        function initCategoryChart() {
+            const categoryChart = document.getElementById('categoryChart');
+            if (!categoryChart) return;
+
+            // Create the chart
+            new Chart(categoryChart.getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: categoryLabels,
+                    datasets: [{
+                        data: categoryValues,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.5)',
+                            'rgba(54, 162, 235, 0.5)',
+                            'rgba(255, 206, 86, 0.5)',
+                            'rgba(75, 192, 192, 0.5)',
+                            'rgba(153, 102, 255, 0.5)',
+                            'rgba(255, 159, 64, 0.5)',
+                            'rgba(199, 199, 199, 0.5)'
+                        ],
+                        borderColor: [
+                            'rgba(255, 99, 132, 1)',
+                            'rgba(54, 162, 235, 1)',
+                            'rgba(255, 206, 86, 1)',
+                            'rgba(75, 192, 192, 1)',
+                            'rgba(153, 102, 255, 1)',
+                            'rgba(255, 159, 64, 1)',
+                            'rgba(199, 199, 199, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    plugins: { legend: { position: 'right' } }
+                }
+            });
+        }
+    })();
+</script>
+{% endblock %}
+
+<style>
+    .empty-state {
+        padding: 30px;
+        text-align: center;
+    }
+</style>

@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}Pay Fine - Digital Justice System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('fine.index') }}">Fines</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('fine.view', fine_id=fine.id) }}">{{ fine.challan_number }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Pay Fine</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-success text-white text-center py-3">
+                    <h3 class="mb-0"><i class="fas fa-money-bill-wave me-2"></i>Pay Fine</h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>Fine Details</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Challan Number:</th>
+                                    <td>{{ fine.challan_number }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Violation Type:</th>
+                                    <td>{{ fine.violation_type }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Violation Date:</th>
+                                    <td>{{ fine.violation_date.strftime('%d %B %Y') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Due Date:</th>
+                                    <td>
+                                        {{ fine.due_date.strftime('%d %B %Y') }}
+                                        {% if fine.is_overdue() %}
+                                            <span class="badge bg-danger">Overdue</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Payment Summary</h5>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Fine Amount:</span>
+                                        <span id="fine-amount">{{ fine.amount }}</span>
+                                    </div>
+                                    
+                                    {% if fine.is_overdue() %}
+                                    <div class="d-flex justify-content-between mb-2 text-danger">
+                                        <span>Late Penalty:</span>
+                                        <span id="penalty-amount">{{ fine.calculate_penalty() }}</span>
+                                    </div>
+                                    <hr>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex justify-content-between fw-bold">
+                                        <span>Total Amount:</span>
+                                        <span id="total-amount">₹{{ total_amount }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ url_for('fine.pay', fine_id=fine.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-4">
+                            <label for="payment_method" class="form-label">Payment Method</label>
+                            <select class="form-select" id="payment_method" name="payment_method" required>
+                                <option value="" selected disabled>Select payment method</option>
+                                <option value="credit_card">Credit Card</option>
+                                <option value="debit_card">Debit Card</option>
+                                <option value="net_banking">Net Banking</option>
+                                <option value="upi">UPI</option>
+                                <option value="wallet">Digital Wallet</option>
+                            </select>
+                        </div>
+                        
+                        <div id="credit_debit_card_details" class="payment-details">
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="card_number" class="form-label">Card Number</label>
+                                    <input type="text" class="form-control" id="card_number" placeholder="1234 5678 9012 3456">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="expiry_date" class="form-label">Expiry Date</label>
+                                    <input type="text" class="form-control" id="expiry_date" placeholder="MM/YY">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="cvv" class="form-label">CVV</label>
+                                    <input type="password" class="form-control" id="cvv" placeholder="123">
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="card_holder" class="form-label">Card Holder Name</label>
+                                    <input type="text" class="form-control" id="card_holder" placeholder="John Doe">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="net_banking_details" class="payment-details d-none">
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="bank" class="form-label">Select Bank</label>
+                                    <select class="form-select" id="bank">
+                                        <option value="" selected disabled>Select your bank</option>
+                                        <option value="sbi">State Bank of India</option>
+                                        <option value="hdfc">HDFC Bank</option>
+                                        <option value="icici">ICICI Bank</option>
+                                        <option value="axis">Axis Bank</option>
+                                        <option value="pnb">Punjab National Bank</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="upi_details" class="payment-details d-none">
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="upi_id" class="form-label">UPI ID</label>
+                                    <input type="text" class="form-control" id="upi_id" placeholder="yourname@upi">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="wallet_details" class="payment-details d-none">
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <label for="wallet" class="form-label">Select Wallet</label>
+                                    <select class="form-select" id="wallet">
+                                        <option value="" selected disabled>Select your wallet</option>
+                                        <option value="paytm">Paytm</option>
+                                        <option value="phonepe">PhonePe</option>
+                                        <option value="gpay">Google Pay</option>
+                                        <option value="amazonpay">Amazon Pay</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info mb-4">
+                            <h6><i class="fas fa-info-circle me-2"></i>Secure Payment</h6>
+                            <p class="mb-0">Your payment information is secure and encrypted. We do not store your card details.</p>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">Pay ₹{{ total_amount }}</button>
+                            <a href="{{ url_for('fine.view', fine_id=fine.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const paymentMethod = document.getElementById('payment_method');
+        const creditDebitCardDetails = document.getElementById('credit_debit_card_details');
+        const netBankingDetails = document.getElementById('net_banking_details');
+        const upiDetails = document.getElementById('upi_details');
+        const walletDetails = document.getElementById('wallet_details');
+        
+        paymentMethod.addEventListener('change', function() {
+            // Hide all payment details sections
+            creditDebitCardDetails.classList.add('d-none');
+            netBankingDetails.classList.add('d-none');
+            upiDetails.classList.add('d-none');
+            walletDetails.classList.add('d-none');
+            
+            // Show the selected payment method details
+            if (this.value === 'credit_card' || this.value === 'debit_card') {
+                creditDebitCardDetails.classList.remove('d-none');
+            } else if (this.value === 'net_banking') {
+                netBankingDetails.classList.remove('d-none');
+            } else if (this.value === 'upi') {
+                upiDetails.classList.remove('d-none');
+            } else if (this.value === 'wallet') {
+                walletDetails.classList.remove('d-none');
+            }
+        });
+    });
+</script>
+{% endblock %}
