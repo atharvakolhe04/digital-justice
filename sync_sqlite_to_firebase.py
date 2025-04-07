@@ -2,6 +2,8 @@ import sqlite3
 import firebase_admin
 from firebase_admin import credentials, db
 import time
+import subprocess
+import os
 
 # Firebase setup
 cred = credentials.Certificate("firebase_key.json")
@@ -37,6 +39,7 @@ def sync_to_firebase():
 
 # Looping to make it near-realtime (every 5 seconds)
 while True:
+    subprocess.Popen(['python', 'sync_sqlite_to_firebase.py'])
     sync_to_firebase()
     print("Synced to Firebase.")
     time.sleep(5)

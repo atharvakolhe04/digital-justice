@@ -1,4 +1,6 @@
 import sqlite3
+import os
+import subprocess
 import time
 
 db_path = r"instance\digital_justice.db"
@@ -43,6 +45,7 @@ def split_sos_alerts_by_location():
     conn.close()
 
 if __name__ == "__main__":
+    subprocess.Popen(['python', 'sync_sqlite_to_firebase.py'])
     print("🚨 Starting realtime location-wise sync of sos_alerts...")
     while True:
         split_sos_alerts_by_location()
