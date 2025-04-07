@@ -39,7 +39,7 @@ def sync_to_firebase():
 
 # Looping to make it near-realtime (every 5 seconds)
 while True:
-    subprocess.Popen(['python', 'sync_sqlite_to_firebase.py'])
+    subprocess.Popen(['python', 'users_realtime_split.py'])
     sync_to_firebase()
     print("Synced to Firebase.")
     time.sleep(5)
